@@ -1936,45 +1936,74 @@ export default function EndoMiniApp() {
         <div className="p-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-rose-900">{STR.appTitle}</h1>
           <details className="relative">
-            <summary className="list-none cursor-pointer px-3 py-2 rounded-xl border border-rose-200 bg-white">Einstellungen</summary>
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow p-4 text-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span>Schnellmodus</span>
-                <input type="checkbox" checked={settings.quickMode} onChange={e=>setSettings({...settings, quickMode:e.target.checked})} />
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <span>Verschlüsselung</span>
-                <input
-                  type="checkbox"
-                  checked={settings.encryption}
-                  onChange={e=>{
-                    if (e.target.checked && (!pass || pass.length < 4)) {
-                      alert('Bitte zuerst eine Passphrase (≥ 4 Zeichen) setzen.')
-                      return
-                    }
-                    setSettings({ ...settings, encryption: e.target.checked })
-                  }}
-                />
-              </div>
-              <p className="text-xs text-gray-500 mb-2">{STR.encryptionNote}</p>
-              <div className="flex items-center justify-between mb-2">
-                <span>{STR.strongerKdf}</span>
-                <input type="checkbox" checked={!!settings.kdfStrong} onChange={e=>setSettings({...settings, kdfStrong:e.target.checked})} disabled={!settings.encryption} />
-              </div>
-              {settings.encryption && (
-                <div className="mt-2">
-                  <label className="block mb-1">Passphrase</label>
-                  <input type="password" className="w-full border rounded-xl px-3 py-2" placeholder="PIN/Passwort" value={pass} onChange={e=>setPass(e.target.value)} />
-                  <p className="text-xs text-gray-500 mt-1">{STR.dataLocal}</p>
-                  <p className="text-xs text-gray-500 mt-1">{STR.passphraseWarning}</p>
-                </div>
-              )}
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-red-600">{STR.clearAll}</span>
-                <button className="px-3 py-2 rounded-xl border focus-visible:ring-2 focus-visible:ring-rose-400" onClick={()=>{ if (confirm('Wirklich alles löschen?')) { localStorage.clear(); location.reload() } }}>Löschen</button>
-              </div>
-            </div>
-          </details>
+   <summary className="list-none cursor-pointer px-3 py-2 rounded-xl border border-rose-200 bg-white">Einstellungen</summary>
+   <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow p-4 text-sm">
+     <div className="flex items-center justify-between mb-2">
+       <span>Schnellmodus</span>
+       <input
+         type="checkbox"
+         checked={settings.quickMode}
+         onChange={e=>setSettings({...settings, quickMode:e.target.checked})}
+       />
+     </div>
+
+     {/* Passphrase immer sichtbar machen */}
+     <div className="mt-2">
+       <label className="block mb-1">Passphrase</label>
+       <input
+         type="password"
+         className="w-full border rounded-xl px-3 py-2"
+         placeholder="PIN/Passwort (≥ 4 Zeichen)"
+         value={pass}
+         onChange={e=>setPass(e.target.value)}
+         aria-label="Passphrase für lokale Verschlüsselung"
+       />
+       <p className="text-xs text-gray-500 mt-1">Aktiv mit Passphrase (mind. 4 Zeichen). Ohne Passphrase keine Verschlüsselung.</p>
+       <p className="text-xs text-gray-500">Passphrase wird nicht gespeichert oder wiederhergestellt. {STR.dataLocal}</p>
+     </div>
+
+     <div className="flex items-center justify-between mb-2 mt-3">
+       <span>Verschlüsselung</span>
+       <input
+         type="checkbox"
+         checked={settings.encryption}
+         disabled={(pass||'').length < 4}
+         onChange={e=>{
+           if (e.target.checked && (pass||'').length < 4) return
+           setSettings({...settings, encryption:e.target.checked})
+         }}
+         aria-disabled={(pass||'').length < 4}
+       />
+     </div>
+
+     <div className="flex items-center justify-between mb-2">
+       <span>{STR.strongerKdf}</span>
+       <input
+         type="checkbox"
+         checked={!!settings.kdfStrong}
+         onChange={e=>setSettings({...settings, kdfStrong:e.target.checked})}
+         disabled={!settings.encryption}
+       />
+     </div>
+
+     {/* Locked-Hinweis, falls Entschlüsselung scheitert */}
+     {settings.encryption && locked && (
+       <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-2 text-xs">
+         Daten sind verschlüsselt. Bitte korrekte Passphrase eingeben, um zu entsperren.
+       </div>
+     )}
+
+     <div className="mt-3 flex items-center justify-between">
+       <span className="text-red-600">{STR.clearAll}</span>
+       <button
+         className="px-3 py-2 rounded-xl border"
+         onClick={()=>{ if (confirm('Wirklich alles löschen?')) { localStorage.clear(); location.reload() } }}
+       >
+         Löschen
+       </button>
+     </div>
+   </div>
+ </details>
         </div>
         {tab==='today' && <Stepper step={step} total={totalSteps} />}
         {tab==='today' && (
