@@ -60,9 +60,9 @@ const STR = {
   moreDetails: 'Weitere Details',
   lessDetails: 'Details ausblenden',
   subNrsTitle: 'Schmerz-Details',
-  dyspareuniaLabel: 'Dyspareunie (0–10)',
-  dysuriaLabel: 'Dysurie (0–10)',
-  dyscheziaLabel: 'Dyschezie (0–10)',
+  dyspareuniaLabel: 'Dyspareunie (Schmerzen beim Sex, 0–10)',
+  dysuriaLabel: 'Dysurie (Schmerzen beim Wasserlassen, 0–10)',
+  dyscheziaLabel: 'Dyschezie (Schmerzen beim Stuhlgang, 0–10)',
   timingDuring: 'während',
   timingAfter: 'danach',
   locationSuperficial: 'oberflächlich',
@@ -73,15 +73,15 @@ const STR = {
   pegPain: 'Durchschnittsschmerz',
   pegEnjoyment: 'Lebensfreude',
   pegActivity: 'Aktivität',
-  promisTitle: 'Schlaf & Fatigue (PROMIS 4a)',
+  promisTitle: 'Schlaf & Müdigkeit (PROMIS 4a Fragebogen)',
   promisSleepHint: 'PROMIS Sleep Disturbance 4a (letzte 7 Tage). 1 = Nie, 5 = Immer.',
   promisFatigueHint: 'Optional: PROMIS Fatigue 4a (letzte 7 Tage).',
   promisFatigueToggle: 'Fatigue erfassen',
   promisFatigueHide: 'Fatigue ausblenden',
   weekliesInfo: 'Diese Kurzfragen erscheinen nur am jeweiligen Wochentag.',
-  uroTitle: 'Blase & Wasserlassen',
+  uroTitle: 'Blase & Wasserlassen (Urologie)',
   urinationFrequencyLabel: 'Miktionen pro Tag',
-  urgencyLabel: 'Drang vorhanden',
+  urgencyLabel: 'Drang vorhanden (plötzlicher Harndrang)',
   urgencyFrequencyLabel: 'Drang-Häufigkeit',
   bowelTitle: 'Darm & Verdauung',
   bowelFrequencyLabel: 'Stuhlgang pro Tag',
@@ -110,7 +110,10 @@ const STR = {
   cycleCardEmpty: 'Noch keine Blutungszyklen erkannt.',
   strongerKdf: 'Stärkere Verschlüsselung (langsamer)',
   pbacCupNote: 'Cups werden in ml erfasst und zählen nicht zum Higham-Score.',
-  cupMlLabel: 'Tassenmenge (ml)'
+  cupMlLabel: 'Tassenmenge (ml)',
+  medsYes: 'Ja',
+  medsNo: 'Nein',
+  medsUnknown: 'Offen lassen'
 }
 
 const SYMPTOMS = [
@@ -335,6 +338,13 @@ function normalizeTherapy(list, legacyMeds) {
     }))
   }
   return []
+}
+
+function deriveTookMeds(source) {
+  if (!source) return null
+  if (typeof source.tookMeds === 'boolean') return source.tookMeds
+  if (Array.isArray(source.medication) && source.medication.length > 0) return true
+  return null
 }
 
 function todayISO() {
@@ -1038,7 +1048,7 @@ function BowelInputs({ value, onChange, disabled = false }) {
   )
 }
 
-function TherapyManager({ list, onChange, disabled = false }) {
+function TherapyManager({ list, onChange, disabled = false, tookMeds = null, onTookMedsChange = () => {} }) {
   const [draft, setDraft] = useState({
     id: null,
     class: THERAPY_CLASSES[0],
@@ -1049,6 +1059,17 @@ function TherapyManager({ list, onChange, disabled = false }) {
     adverse: { hasAe: false, top: [] },
   })
   const [tagInput, setTagInput] = useState('')
+
+  const handleTookMeds = value => {
+    if (disabled) return
+    const next = tookMeds === value ? null : value
+    onTookMedsChange(next)
+  }
+
+  const handleClearMeds = () => {
+    if (disabled) return
+    onTookMedsChange(null)
+  }
 
   const resetDraft = () => {
     setDraft({ id: null, class: THERAPY_CLASSES[0], drug: '', dose: '', regimen: '', adherence: 100, adverse: { hasAe: false, top: [] } })
@@ -1107,6 +1128,14 @@ function TherapyManager({ list, onChange, disabled = false }) {
   return (
     <Section title={STR.therapyTitle} hint="Strukturiert erfassen, max. drei Nebenwirkungen je Eintrag.">
       <div className="space-y-4">
+        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-3">
+          <div className="text-sm font-medium text-rose-900">{STR.medsQ}</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Chip active={tookMeds === true} onClick={() => handleTookMeds(true)} disabled={disabled}>{STR.medsYes}</Chip>
+            <Chip active={tookMeds === false} onClick={() => handleTookMeds(false)} disabled={disabled}>{STR.medsNo}</Chip>
+            <Chip active={tookMeds === null} onClick={handleClearMeds} disabled={disabled}>{STR.medsUnknown}</Chip>
+          </div>
+        </div>
         <div className="grid grid-cols-1 gap-3">
           <label className="text-sm">
             <span className="block mb-1">{STR.therapyClassLabel}</span>
@@ -1414,6 +1443,7 @@ export default function EndoMiniApp() {
   const [zones, setZones] = useState([])
   const [symptoms, setSymptoms] = useState([])
   const [therapy, setTherapy] = useState([])
+  const [tookMeds, setTookMeds] = useState(null)
   const [sleep, setSleep] = useState(5)
   const [subNrs, setSubNrs] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
   const [uro, setUro] = useState(() => ({ ...DEFAULT_URO }))
@@ -1440,6 +1470,7 @@ export default function EndoMiniApp() {
       setZones(e.zones ?? [])
       setSymptoms(e.symptoms ?? [])
       setTherapy(normalizeTherapy(e.therapy, e.medication))
+      setTookMeds(deriveTookMeds(e))
       setSleep(e.sleep ?? 5)
       setSubNrs(normalizeSubNrs(e.subNrs))
       setUro(normalizeUro(e.uro))
@@ -1455,6 +1486,7 @@ export default function EndoMiniApp() {
       setZones([])
       setSymptoms([])
       setTherapy([])
+      setTookMeds(null)
       setSleep(5)
       setSubNrs(JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
       setUro({ ...DEFAULT_URO })
@@ -1477,6 +1509,7 @@ export default function EndoMiniApp() {
     setSymptoms(yesterday.symptoms ?? [])
     setSleep(yesterday.sleep ?? 5)
     setTherapy(normalizeTherapy(yesterday.therapy, yesterday.medication))
+    setTookMeds(deriveTookMeds(yesterday))
     setSubNrs(normalizeSubNrs(yesterday.subNrs))
     setUro(normalizeUro(yesterday.uro))
     setBowel(normalizeBowel(yesterday.bowel))
@@ -1494,6 +1527,7 @@ export default function EndoMiniApp() {
     setZones([])
     setSymptoms([])
     setTherapy([])
+    setTookMeds(null)
     setSleep(7)
     setSubNrs(JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
     setUro({ ...DEFAULT_URO })
@@ -1538,6 +1572,7 @@ export default function EndoMiniApp() {
         zones,
         symptoms,
         therapy: therapySave,
+        tookMeds: typeof tookMeds === 'boolean' ? tookMeds : null,
         sleep,
         subNrs: subNrsSave,
         uro: uroSave,
@@ -1765,7 +1800,15 @@ export default function EndoMiniApp() {
               <BowelInputs value={bowel} onChange={setBowel} disabled={!isEditing} />
             </>
           )}</div>
-          <div ref={sectionRefs[6]}>{step>=6 && <TherapyManager list={therapy} onChange={setTherapy} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[6]}>{step>=6 && (
+            <TherapyManager
+              list={therapy}
+              onChange={setTherapy}
+              disabled={!isEditing}
+              tookMeds={tookMeds}
+              onTookMedsChange={setTookMeds}
+            />
+          )}</div>
           <div ref={sectionRefs[7]}>{step>=7 && <SleepScale value={sleep} onChange={setSleep} disabled={!isEditing} />}</div>
           <div ref={sectionRefs[8]}>{step>=8 && (
             <>
@@ -1850,6 +1893,7 @@ export default function EndoMiniApp() {
                       {e.pbac?.periodStart ? ' · Beginn' : ''}
                       {e.pbac?.cupMl ? ` · Cup ${e.pbac.cupMl} ml` : ''}
                       {e.pbac?.dayScore > 0 && e.pbac.dayScore <= PBAC_RULES.spottingMax ? ` · ${STR.spottingLabel}` : ''}
+                      {typeof e.tookMeds === 'boolean' ? ` · Medikation heute: ${e.tookMeds ? STR.medsYes : STR.medsNo}` : ''}
                       {(() => {
                         const syms = (e.symptoms||[]).slice().sort((a,b)=> (b.intensity||0)-(a.intensity||0)).slice(0,3)
                         return syms.length ? ` · ${STR.cycleCardSymptoms}: ${syms.map(s=>s.label).join(', ')}` : ''
