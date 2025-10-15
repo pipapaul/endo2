@@ -48,12 +48,12 @@ const STR = {
   nrsQ: 'Wie stark ist dein Schmerz jetzt?',
   nrsHint: '0 = kein, 10 = unerträglich. Wähle spontan.',
   pbacTitle: 'Periode & Blutung',
-  pbacHint: 'Tippe, wie voll deine Produkte waren. Das hilft in Arztgesprächen (PBAC).',
+  pbacHint: 'Tippe, wie voll die Produkte waren. PBAC hilft in Arztgesprächen.',
   bodyQ: 'Wo sitzt der Schmerz?',
   bodyHint: 'Tippe 1–3 Bereiche. Alternativ Liste für Screenreader.',
   symptomsQ: 'Welche 1–3 Symptome spürst du heute?',
   symptomsHint: '0 = keins, 10 = sehr stark.',
-  medsQ: 'Hast du etwas genommen?',
+  medsQ: 'Heute Medikamente eingenommen (z. B. Schmerzmittel/Hormontherapie)?',
   sleepQ: 'Wie war dein Schlaf?',
   sleepHint: '0 = sehr schlecht, 10 = sehr gut.',
   saved: 'Gespeichert',
@@ -80,7 +80,7 @@ const STR = {
   pbacCupLabel: 'Menstruationstasse',
   pbacCupHint: 'Menstruationstassen zählen nicht zum Higham-Score. Menge in ml erfassen.',
   pbacFloodingEpisodes: 'Flooding-Episoden',
-  pbacFloodingHint: 'Je Episode 5 Punkte (Higham). Sicherheitslimit beachten.',
+  pbacFloodingHint: 'Je Episode 5 Punkte (Higham); max. 6/Tag. Bei anhaltend starker Blutung ärztlich abklären.',
   pbacClotHint: 'Klumpen klein ≈ 1 cm, groß ≈ 2–3 cm.',
   pbacClotSmall: 'Klumpen klein',
   pbacClotLarge: 'Klumpen groß',
@@ -92,9 +92,9 @@ const STR = {
   subNrsTitle: 'Schmerz-Details',
   dyspareuniaLabel: 'Dyspareunie',
   dyspareuniaHint: 'Schmerzen beim Sex (0–10).',
-  dysuriaLabel: 'Dysurie',
+  dysuriaLabel: 'Dysurie (Schmerzen beim Wasserlassen, 0–10)',
   dysuriaHint: 'Schmerzen beim Wasserlassen (0–10).',
-  dyscheziaLabel: 'Dyschezie',
+  dyscheziaLabel: 'Dyschezie (Schmerzen beim Stuhlgang, 0–10)',
   dyscheziaHint: 'Schmerzen beim Stuhlgang (0–10).',
   timingDuring: 'während',
   timingAfter: 'danach',
@@ -116,13 +116,14 @@ const STR = {
   uroTitle: 'Blase & Wasserlassen',
   uroHint: 'Frequenzen als Kategorien, Drang separat.',
   urinationFrequencyLabel: 'Miktionen pro Tag',
-  urgencyLabel: 'Drang vorhanden',
+  urgencyLabel: 'Starker/plötzlicher Harndrang (Urgency)',
   urgencyHint: 'Plötzlicher Harndrang.',
-  urgencyFrequencyLabel: 'Drang-Häufigkeit',
+  urgencyFrequencyLabel: 'Häufigkeit des Harndrangs',
   bowelTitle: 'Darm & Verdauung',
   bowelHint: 'Frequenzen & Bristol-Form dokumentieren.',
   bowelFrequencyLabel: 'Stuhlgang pro Tag',
   bristolLabel: 'Bristol-Skala',
+  bristolTooltip: 'Bristol: 1 = sehr hart, 4 = normal, 7 = flüssig.',
   therapyTitle: 'Therapien & Nebenwirkungen',
   therapyHint: 'Strukturiert erfassen, max. drei Nebenwirkungen je Eintrag.',
   therapyAdd: 'Therapie hinzufügen',
@@ -130,7 +131,7 @@ const STR = {
   therapyDrugLabel: 'Wirkstoff/Name',
   therapyDoseLabel: 'Dosis',
   therapyRegimenLabel: 'Regime',
-  therapyAdherenceLabel: 'Adhärenz (%)',
+  therapyAdherenceLabel: 'Adhärenz (Einnahmetreue) (%)',
   therapyAeLabel: 'Nebenwirkungen',
   therapyAeHint: 'Mehrfachauswahl, max. 3',
   therapyHasAe: 'Nebenwirkungen vorhanden',
@@ -148,6 +149,8 @@ const STR = {
   cycleCardHint: 'Median/Peak nach Zyklus, PBAC-Summe, häufigste Symptome.',
   cycleCardEmpty: 'Noch keine Blutungszyklen erkannt.',
   strongerKdf: 'Stärkere Verschlüsselung (langsamer)',
+  encryptionNote: 'Aktiv mit Passphrase (mind. 4 Zeichen). Ohne Passphrase keine Verschlüsselung.',
+  passphraseWarning: 'Hinweis: Die Passphrase wird nicht gespeichert und kann nicht wiederhergestellt werden.',
   pbacCupNote: 'Cups werden in ml erfasst und zählen nicht zum Higham-Score.',
   cupMlLabel: 'Tassenmenge (ml)',
   medsYes: 'Ja',
@@ -167,10 +170,10 @@ const SYMPTOMS = [
   { id: 'nausea', label: 'Übelkeit' },
   { id: 'bloat', label: 'Blähbauch' },
   { id: 'back', label: 'Rückenschmerz' },
-  { id: 'sex_deep', label: 'Schmerz beim Sex (tief)' },
+  { id: 'sex_deep', label: 'Schmerzen beim Sex' },
   { id: 'urination', label: 'Schmerz beim Wasserlassen' },
   { id: 'bowel', label: 'Schmerz beim Stuhlgang' },
-  { id: 'urge', label: 'Dranginkontinenz' },
+  { id: 'urge', label: 'Harndrang (stark/plötzlich)' },
   { id: 'migraine', label: 'Kopfschmerzen/Migräne' },
   { id: 'dizzy', label: 'Schwindel' },
 ]
@@ -191,7 +194,7 @@ const ZONES = [
 const FILL_ALIASES = { low: 'light', mid: 'medium', high: 'heavy', light: 'light', medium: 'medium', heavy: 'heavy' }
 
 const FREQUENCY_OPTIONS = [
-  { id: '0', label: '0' },
+  { id: '0', label: '0 (keine Miktion)' },
   { id: '1-3', label: '1–3' },
   { id: '4-6', label: '4–6' },
   { id: '>=7', label: '≥7' },
@@ -1218,7 +1221,10 @@ function BowelInputs({ value, onChange, disabled = false }) {
         </div>
       </div>
       <div>
-        <div className="text-sm mb-1">{STR.bristolLabel}</div>
+        <div className="flex items-center gap-2 text-sm mb-1">
+          <span>{STR.bristolLabel}</span>
+          <Tooltip text={STR.bristolTooltip} />
+        </div>
         <div className="flex flex-wrap gap-2">
           {BRISTOL_OPTIONS.map(num => (
             <button
@@ -1930,6 +1936,8 @@ export default function EndoMiniApp() {
                 <div className="mt-2">
                   <label className="block mb-1">Passphrase</label>
                   <input type="password" className="w-full border rounded-xl px-3 py-2" placeholder="PIN/Passwort" value={pass} onChange={e=>setPass(e.target.value)} />
+                  <p className="text-xs text-gray-500 mt-1">{STR.encryptionNote}</p>
+                  <p className="text-xs text-gray-500 mt-1">{STR.passphraseWarning}</p>
                   <p className="text-xs text-gray-500 mt-1">{STR.dataLocal}</p>
                 </div>
               )}
