@@ -1599,7 +1599,10 @@ export default function EndoMiniApp() {
   const [confirmOverwrite, setConfirmOverwrite] = useState(false)
 
   // section refs for progressive reveal scrolling
-  const sectionRefs = Array.from({ length: totalSteps }, () => useRef(null))
+  const sectionRefs = useMemo(
+    () => Array.from({ length: totalSteps }, () => React.createRef()),
+    [totalSteps]
+  )
 
   // Load entry when switching day
   useEffect(()=>{
