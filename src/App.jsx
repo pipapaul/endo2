@@ -108,7 +108,7 @@ const STR = {
   pegActivity: 'Aktivität',
   promisTitle: 'Schlaf & Müdigkeit',
   promisSleepHint: 'PROMIS Sleep Disturbance 4a (letzte 7 Tage). 1 = Nie, 5 = Immer.',
-  promisFatigueHint: 'Optional: PROMIS Fatigue 4a (letzte 7 Tage).',
+  promisFatigueHint: 'PROMIS Fatigue 4a (letzte 7 Tage). 1 = Nie, 5 = Immer.',
   promisFatigueLabel: 'Fatigue-Erfassung',
   promisFatigueToggle: 'Fatigue erfassen',
   promisFatigueHide: 'Fatigue ausblenden',
@@ -1050,7 +1050,7 @@ function PainDetails({ value, onChange, disabled = false }) {
   )
 }
 
-function PainInterferenceMini({ value, onChange, disabled = false, date }) {
+function PainInterferenceMini({ value, onChange, disabled = false, date, titleOverride }) {
   if (!value || !date) return null
   const peg = value.peg3
   const update = (field, val) => {
@@ -1060,7 +1060,7 @@ function PainInterferenceMini({ value, onChange, disabled = false, date }) {
     onChange({ date, peg3: nextPeg, rawSum })
   }
   return (
-    <Section title={STR.painInterferenceTitle} hint={`${STR.pegHint} ${STR.weekliesInfo}`}>
+    <Section title={titleOverride ?? STR.painInterferenceTitle} hint={`${STR.pegHint} ${STR.weekliesInfo}`}>
       <div className="space-y-4">
         <div>
           <div className="text-sm font-medium mb-1">{STR.pegPain}: <b>{peg.pain}</b></div>
@@ -1081,7 +1081,7 @@ function PainInterferenceMini({ value, onChange, disabled = false, date }) {
   )
 }
 
-function PromisWeeklyMini({ value, onChange, disabled = false, date }) {
+function PromisWeeklyMini({ value, onChange, disabled = false, date, titleOverride }) {
   const [showFatigue, setShowFatigue] = useState(() => !!(value && value.fatigue4aRaw > 0))
   useEffect(() => {
     if (value?.fatigue4aRaw > 0) setShowFatigue(true)
@@ -1135,7 +1135,7 @@ function PromisWeeklyMini({ value, onChange, disabled = false, date }) {
   )
 
   return (
-    <Section title={STR.promisTitle} hint={`${STR.promisSleepHint} ${STR.weekliesInfo}`}>
+    <Section title={titleOverride ?? STR.promisTitle} hint={`${STR.promisSleepHint} ${STR.weekliesInfo}`}>
       <div className="space-y-4">
         <LikertRow items={PROMIS_SLEEP_ITEMS} values={value.sleep4a} type="sleep" />
         <div className="text-sm">Summe Schlaf: <span className="font-semibold">{value.sleep4aRaw}</span></div>
@@ -2044,10 +2044,22 @@ export default function EndoMiniApp() {
           <div ref={sectionRefs[8]}>{step>=8 && (
             <>
               {isoWeekday(activeDate) === 1 && painInterference && (
-                <PainInterferenceMini value={painInterference} onChange={setPainInterference} disabled={!isEditing} date={activeDate} />
+                <PainInterferenceMini
+                  value={painInterference}
+                  onChange={setPainInterference}
+                  disabled={!isEditing}
+                  date={activeDate}
+                  titleOverride="Heute ist Montag: PEG-3 Kurzfragen"
+                />
               )}
               {isoWeekday(activeDate) === 0 && promis && (
-                <PromisWeeklyMini value={promis} onChange={setPromis} disabled={!isEditing} date={activeDate} />
+                <PromisWeeklyMini
+                  value={promis}
+                  onChange={setPromis}
+                  disabled={!isEditing}
+                  date={activeDate}
+                  titleOverride="Heute ist Sonntag: PROMIS-Kurzfragen"
+                />
               )}
             </>
           )}</div>
