@@ -46,7 +46,71 @@ const STR = {
   editDay: 'Tag bearbeiten',
   bannerSaved: 'Tag gespeichert',
   periodStart: 'Periodenbeginn heute',
-  periodLegend: 'Markierung zeigt Periodentage / -beginn'
+  periodLegend: 'Markierung zeigt Periodentage / -beginn',
+  pbacGuide: 'PBAC nach Higham: Binde/Tampon leicht ≈ 1/5/20 bzw. 1/5/10 Punkte. Klumpen klein ≈ 1 cm (1 Punkt), groß ≈ 2–3 cm (5 Punkte). Flooding = plötzliches Durchsickern, je Episode 5 Punkte. Cups in ml erfassen – gehören nicht zum Score.',
+  pbacCupLabel: 'Menstruationstasse (nicht Teil des PBAC)',
+  pbacCupHint: 'Bitte Menge in ml erfassen. Cups zählen nicht zum Higham-Score.',
+  pbacFloodingEpisodes: 'Flooding-Episoden',
+  pbacFloodingHint: 'Je Episode 5 Punkte (Higham). Sicherheitslimit beachten.',
+  pbacClotHint: 'Klumpen klein ≈ 1 cm, groß ≈ 2–3 cm.',
+  pbacClotSmall: 'Klumpen klein',
+  pbacClotLarge: 'Klumpen groß',
+  pbacLegend: 'Legende: Linie Schmerz, Balken PBAC, Punkt Beginn, Schraffur Periode, Linie Spotting.',
+  spottingLabel: 'Spotting',
+  moreDetails: 'Weitere Details',
+  lessDetails: 'Details ausblenden',
+  subNrsTitle: 'Schmerz-Details',
+  dyspareuniaLabel: 'Dyspareunie (0–10)',
+  dysuriaLabel: 'Dysurie (0–10)',
+  dyscheziaLabel: 'Dyschezie (0–10)',
+  timingDuring: 'während',
+  timingAfter: 'danach',
+  locationSuperficial: 'oberflächlich',
+  locationDeep: 'tief',
+  avoidanceLabel: 'Vermeidung',
+  painInterferenceTitle: 'Pain Interference (PEG-3)',
+  pegHint: 'Einmal pro Woche (Montag): Durchschnittsschmerz, Lebensfreude, Aktivität (0–10).',
+  pegPain: 'Durchschnittsschmerz',
+  pegEnjoyment: 'Lebensfreude',
+  pegActivity: 'Aktivität',
+  promisTitle: 'Schlaf & Fatigue (PROMIS 4a)',
+  promisSleepHint: 'PROMIS Sleep Disturbance 4a (letzte 7 Tage). 1 = Nie, 5 = Immer.',
+  promisFatigueHint: 'Optional: PROMIS Fatigue 4a (letzte 7 Tage).',
+  promisFatigueToggle: 'Fatigue erfassen',
+  promisFatigueHide: 'Fatigue ausblenden',
+  weekliesInfo: 'Diese Kurzfragen erscheinen nur am jeweiligen Wochentag.',
+  uroTitle: 'Blase & Wasserlassen',
+  urinationFrequencyLabel: 'Miktionen pro Tag',
+  urgencyLabel: 'Drang vorhanden',
+  urgencyFrequencyLabel: 'Drang-Häufigkeit',
+  bowelTitle: 'Darm & Verdauung',
+  bowelFrequencyLabel: 'Stuhlgang pro Tag',
+  bristolLabel: 'Bristol-Skala',
+  therapyTitle: 'Therapien & Nebenwirkungen',
+  therapyAdd: 'Therapie hinzufügen',
+  therapyClassLabel: 'Klasse',
+  therapyDrugLabel: 'Wirkstoff/Name',
+  therapyDoseLabel: 'Dosis',
+  therapyRegimenLabel: 'Regime',
+  therapyAdherenceLabel: 'Adhärenz (%)',
+  therapyAeLabel: 'Nebenwirkungen',
+  therapyAeHint: 'Mehrfachauswahl, max. 3',
+  therapyHasAe: 'Nebenwirkungen vorhanden',
+  therapyListEmpty: 'Keine Therapien erfasst.',
+  therapyDelete: 'Löschen',
+  therapyEdit: 'Bearbeiten',
+  lagCheckTitle: 'Lag-Check Schlaf↔Schmerz',
+  lagCheckHint: 'Explorativ: Schlaf gestern (x) vs. Schmerz heute (y), n ≥ 14 nötig – keine Kausalität.',
+  lagCheckTooFew: 'Zu wenige gepaarte Werte (n < 14).',
+  cycleCardsTitle: 'Cycle-Cards',
+  cycleCardMedian: 'Median NRS',
+  cycleCardPeak: 'Peak NRS',
+  cycleCardPbac: 'PBAC-Summe',
+  cycleCardSymptoms: 'Top-Symptome',
+  cycleCardEmpty: 'Noch keine Blutungszyklen erkannt.',
+  strongerKdf: 'Stärkere Verschlüsselung (langsamer)',
+  pbacCupNote: 'Cups werden in ml erfasst und zählen nicht zum Higham-Score.',
+  cupMlLabel: 'Tassenmenge (ml)'
 }
 
 const SYMPTOMS = [
@@ -75,6 +139,204 @@ const ZONES = [
   { id: 'thigh_r', label: 'Oberschenkel rechts' },
 ]
 
+const FILL_ALIASES = { low: 'light', mid: 'medium', high: 'heavy', light: 'light', medium: 'medium', heavy: 'heavy' }
+
+const FREQUENCY_OPTIONS = [
+  { id: '0', label: '0' },
+  { id: '1-3', label: '1–3' },
+  { id: '4-6', label: '4–6' },
+  { id: '>=7', label: '≥7' },
+]
+
+const BRISTOL_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
+
+const THERAPY_CLASSES = ['NSAID', 'Kombinierte Pille', 'Gestagen', 'GnRH-Analog/Antagonist', 'Andere']
+const ADHERENCE_OPTIONS = [0, 25, 50, 75, 100]
+
+const PROMIS_SLEEP_ITEMS = [
+  'Ich hatte Schwierigkeiten einzuschlafen.',
+  'Ich wachte mehrmals in der Nacht auf.',
+  'Mein Schlaf war erholsam.',
+  'Ich war mit meinem Schlaf zufrieden.',
+]
+
+const PROMIS_FATIGUE_ITEMS = [
+  'Ich fühlte mich erschöpft.',
+  'Ich hatte Probleme, mich zu konzentrieren.',
+  'Ich fühlte mich energielos.',
+  'Ich fühlte mich müde.',
+]
+
+const DEFAULT_SUB_NRS = {
+  dyspareunia: {
+    nrs: 0,
+    timing: { during: false, after: false },
+    location: { superficial: false, deep: false },
+    avoidance: false,
+  },
+  dysuria: 0,
+  dyschezia: 0,
+}
+
+const DEFAULT_PBAC = { products: [], clots: 'none', floodingEpisodes: 0, cupMl: 0, dayScore: 0, periodStart: false }
+
+const DEFAULT_PAIN_INTERFERENCE = date => ({
+  date,
+  peg3: { pain: 0, enjoyment: 0, activity: 0 },
+  rawSum: 0,
+})
+
+const DEFAULT_PROMIS = date => ({
+  date,
+  sleep4a: [0, 0, 0, 0],
+  sleep4aRaw: 0,
+  fatigue4a: [0, 0, 0, 0],
+  fatigue4aRaw: 0,
+})
+
+const DEFAULT_URO = { urinationFrequency: '0', urgency: false, urgencyFrequency: '0' }
+const DEFAULT_BOWEL = { bowelFrequency: '0', bristol: 0 }
+
+function computePbacDayScore(pbac) {
+  if (!pbac) return 0
+  const products = Array.isArray(pbac.products) ? pbac.products : []
+  const levelIndex = { light: 0, medium: 1, heavy: 2 }
+  let total = 0
+  products
+    .filter(p => p && (p.kind === 'pad' || p.kind === 'tampon'))
+    .forEach(p => {
+      const kind = p.kind
+      const fill = FILL_ALIASES[p.fill] ?? 'light'
+      const idx = levelIndex[fill] ?? 0
+      const weights = PBAC_WEIGHTS[kind]
+      if (weights) total += weights[idx] ?? 0
+    })
+  const episodes = clamp(Number.isFinite(Number(pbac.floodingEpisodes)) ? Number(pbac.floodingEpisodes) : (pbac.flooding ? 1 : 0), 0, PBAC_RULES.maxFloodingEpisodesPerDay)
+  total += episodes * PBAC_RULES.floodingPointsPerEpisode
+  const clotKey = ['none', 'small', 'large'].includes(pbac.clots) ? pbac.clots : 'none'
+  total += PBAC_RULES.clots[clotKey] ?? 0
+  return total
+}
+
+function normalizePbac(raw) {
+  const base = { ...DEFAULT_PBAC }
+  if (!raw) return base
+  const products = Array.isArray(raw.products)
+    ? raw.products
+        .map(p => ({ kind: p.kind, fill: FILL_ALIASES[p.fill] ?? 'light' }))
+        .filter(p => p.kind === 'pad' || p.kind === 'tampon')
+    : []
+  const floodingEpisodes = clamp(
+    Number.isFinite(Number(raw.floodingEpisodes)) ? Number(raw.floodingEpisodes) : raw.flooding ? 1 : 0,
+    0,
+    PBAC_RULES.maxFloodingEpisodesPerDay,
+  )
+  const cupMl = clamp(Math.round(Number(raw.cupMl) || 0), 0, 120)
+  const clots = ['none', 'small', 'large'].includes(raw.clots) ? raw.clots : 'none'
+  const periodStart = !!raw.periodStart
+  const dayScore = computePbacDayScore({ products, clots, floodingEpisodes })
+  return { ...base, products, clots, floodingEpisodes, cupMl, periodStart, dayScore }
+}
+
+function normalizeSubNrs(raw) {
+  const base = JSON.parse(JSON.stringify(DEFAULT_SUB_NRS))
+  if (!raw) return base
+  return {
+    dyspareunia: {
+      nrs: clamp(Number(raw.dyspareunia?.nrs ?? raw.dyspareunia ?? 0), 0, 10),
+      timing: {
+        during: !!(raw.dyspareunia?.timing?.during),
+        after: !!(raw.dyspareunia?.timing?.after),
+      },
+      location: {
+        superficial: !!(raw.dyspareunia?.location?.superficial),
+        deep: !!(raw.dyspareunia?.location?.deep),
+      },
+      avoidance: !!(raw.dyspareunia?.avoidance),
+    },
+    dysuria: clamp(Number(raw.dysuria ?? 0), 0, 10),
+    dyschezia: clamp(Number(raw.dyschezia ?? 0), 0, 10),
+  }
+}
+
+function normalizePainInterference(raw, date) {
+  if (!raw && !date) return null
+  const source = raw || {}
+  const peg = source.peg3 || {}
+  const nextPeg = {
+    pain: clamp(Number(peg.pain ?? 0), 0, 10),
+    enjoyment: clamp(Number(peg.enjoyment ?? 0), 0, 10),
+    activity: clamp(Number(peg.activity ?? 0), 0, 10),
+  }
+  const rawSum = nextPeg.pain + nextPeg.enjoyment + nextPeg.activity
+  const nextDate = source.date || date
+  return nextDate ? { date: nextDate, peg3: nextPeg, rawSum } : null
+}
+
+function normalizePromis(raw, date) {
+  if (!raw && !date) return null
+  const src = raw || {}
+  const sleep = Array.isArray(src.sleep4a) ? src.sleep4a.slice(0, 4) : [0, 0, 0, 0]
+  while (sleep.length < 4) sleep.push(0)
+  const fatigue = Array.isArray(src.fatigue4a) ? src.fatigue4a.slice(0, 4) : [0, 0, 0, 0]
+  while (fatigue.length < 4) fatigue.push(0)
+  const sleep4a = sleep.map(v => clamp(Number(v || 0), 0, 5))
+  const fatigue4a = fatigue.map(v => clamp(Number(v || 0), 0, 5))
+  const sleep4aRaw = sleep4a.reduce((a, b) => a + b, 0)
+  const fatigue4aRaw = fatigue4a.reduce((a, b) => a + b, 0)
+  const nextDate = src.date || date
+  return nextDate ? { date: nextDate, sleep4a, sleep4aRaw, fatigue4a, fatigue4aRaw } : null
+}
+
+function normalizeUro(raw) {
+  const base = { ...DEFAULT_URO }
+  if (!raw) return base
+  return {
+    urinationFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.urinationFrequency) ? raw.urinationFrequency : '0',
+    urgency: !!raw.urgency,
+    urgencyFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.urgencyFrequency) ? raw.urgencyFrequency : '0',
+  }
+}
+
+function normalizeBowel(raw) {
+  const base = { ...DEFAULT_BOWEL }
+  if (!raw) return base
+  const bristol = clamp(Number(raw.bristol ?? 0), 0, 7)
+  return {
+    bowelFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.bowelFrequency) ? raw.bowelFrequency : '0',
+    bristol,
+  }
+}
+
+function normalizeTherapy(list, legacyMeds) {
+  if (Array.isArray(list) && list.length) {
+    return list.map(item => ({
+      class: THERAPY_CLASSES.includes(item.class) ? item.class : 'Andere',
+      drug: item.drug || '',
+      dose: item.dose || '',
+      regimen: item.regimen || '',
+      adherence: ADHERENCE_OPTIONS.includes(item.adherence) ? item.adherence : 0,
+      adverse: {
+        hasAe: !!(item.adverse?.hasAe),
+        top: Array.isArray(item.adverse?.top) ? item.adverse.top.slice(0, 3) : [],
+      },
+      id: item.id || `${item.class || 'Therapie'}_${Math.random().toString(36).slice(2, 8)}`,
+    }))
+  }
+  if (Array.isArray(legacyMeds) && legacyMeds.length) {
+    return legacyMeds.map(m => ({
+      class: 'Andere',
+      drug: m.name || '',
+      dose: m.dose || '',
+      regimen: 'bei Bedarf',
+      adherence: 0,
+      adverse: { hasAe: false, top: [] },
+      id: `${m.name || 'med'}_${Math.random().toString(36).slice(2, 8)}`,
+    }))
+  }
+  return []
+}
+
 function todayISO() {
   const d = new Date()
   return d.toISOString().slice(0, 10)
@@ -86,7 +348,19 @@ function addDaysISO(iso, delta) {
   return d.toISOString().slice(0, 10)
 }
 
+function isoWeekday(iso) {
+  return new Date(iso).getDay()
+}
+
 function clamp(n, a, b) { return Math.max(a, Math.min(b, n)) }
+
+function median(values) {
+  if (!values.length) return 0
+  const sorted = [...values].sort((a,b)=>a-b)
+  const mid = Math.floor(sorted.length/2)
+  if (sorted.length % 2 === 0) return (sorted[mid-1] + sorted[mid]) / 2
+  return sorted[mid]
+}
 
 function useLocalState(key, initial) {
   const [v, setV] = useState(() => {
@@ -97,25 +371,25 @@ function useLocalState(key, initial) {
 }
 
 // Minimal AES-GCM (optional). Falls WebCrypto fehlt, speichere Klartext.
-async function deriveKey(pass, salt) {
+async function deriveKey(pass, salt, iterations = 120000) {
   const enc = new TextEncoder()
   const keyMat = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey'])
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
     keyMat,
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt']
   )
 }
-async function encryptBlob(obj, pass) {
+async function encryptBlob(obj, pass, iterations = 120000) {
   if (!window.crypto || !pass) return { mode: 'plain', data: JSON.stringify(obj) }
   const enc = new TextEncoder()
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const salt = crypto.getRandomValues(new Uint8Array(16))
-  const key = await deriveKey(pass, salt)
+  const key = await deriveKey(pass, salt, iterations)
   const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj)))
-  return { mode: 'gcm', iv: Array.from(iv), salt: Array.from(salt), data: btoa(String.fromCharCode(...new Uint8Array(cipher))) }
+  return { mode: 'gcm', iv: Array.from(iv), salt: Array.from(salt), iter: iterations, data: btoa(String.fromCharCode(...new Uint8Array(cipher))) }
 }
 async function decryptBlob(bundle, pass) {
   try {
@@ -123,7 +397,8 @@ async function decryptBlob(bundle, pass) {
     const dec = new TextDecoder()
     const iv = new Uint8Array(bundle.iv)
     const salt = new Uint8Array(bundle.salt)
-    const key = await deriveKey(pass, salt)
+    const iterations = bundle.iter || 120000
+    const key = await deriveKey(pass, salt, iterations)
     const bytes = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0))
     const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, bytes)
     return JSON.parse(dec.decode(plain))
@@ -131,19 +406,109 @@ async function decryptBlob(bundle, pass) {
 }
 
 // ---------- Period helpers ----------
-// Build a set of dates that are considered "period days": union of
-// (a) explicit period starts + next 5 days; (b) any day with PBAC > 0.
-function flagPeriodDays(entries) {
-  const set = new Set()
-  const starts = new Set()
-  entries.forEach(e => {
-    if (e?.pbac?.periodStart) {
-      starts.add(e.date)
-      for (let i=0;i<6;i++) set.add(addDaysISO(e.date, i))
+function isoDiffDays(a, b) {
+  const da = new Date(a)
+  const db = new Date(b)
+  return Math.round((da - db) / 86400000)
+}
+
+function detectCycles(entries, rules = PBAC_RULES) {
+  const sorted = entries
+    .filter(e => e?.date)
+    .slice()
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+  const cycles = []
+  let current = null
+  let zeroStreak = rules.minZerosBeforeNewBleed
+  let prevDate = null
+  let positiveRun = false
+  let runZerosBefore = zeroStreak
+
+  const finalize = () => {
+    if (current) {
+      cycles.push(current)
+      current = null
     }
-    if ((e?.pbac?.dayScore||0) > 0) set.add(e.date)
+  }
+
+  sorted.forEach(entry => {
+    const date = entry.date
+    const pbacRaw = Number(entry?.pbac?.dayScore ?? 0)
+    const pbac = Number.isFinite(pbacRaw) ? Math.max(0, pbacRaw) : 0
+    const spotting = pbac > 0 && pbac <= rules.spottingMax
+    const bleeding = pbac >= rules.bleedingMin
+
+    if (prevDate) {
+      const gap = isoDiffDays(date, prevDate)
+      if (gap > 1) {
+        zeroStreak += gap - 1
+        positiveRun = false
+        runZerosBefore = zeroStreak
+        finalize()
+      }
+    }
+
+    if (pbac === 0) {
+      zeroStreak += 1
+      positiveRun = false
+      runZerosBefore = zeroStreak
+      finalize()
+    } else {
+      if (!positiveRun) {
+        positiveRun = true
+        runZerosBefore = zeroStreak
+      }
+      zeroStreak = 0
+
+      if (bleeding) {
+        if (!current) {
+          if (runZerosBefore >= rules.minZerosBeforeNewBleed || cycles.length === 0) {
+            current = { start: date, end: date, days: [], pbacSum: 0 }
+          } else {
+            const last = cycles.pop()
+            if (last) {
+              current = { ...last, days: last.days.slice() }
+            }
+            if (!current) current = { start: date, end: date, days: [], pbacSum: 0 }
+          }
+        }
+        current.days.push({ date, pbac, spotting: false })
+        current.pbacSum += pbac
+        current.end = date
+      } else if (spotting && current) {
+        current.days.push({ date, pbac, spotting: true })
+        current.end = date
+      }
+    }
+
+    prevDate = date
   })
-  return { periodSet: set, startSet: starts }
+
+  finalize()
+  return cycles
+}
+
+function buildPeriodFlags(entries, rules = PBAC_RULES) {
+  const cycles = detectCycles(entries, rules)
+  const periodSet = new Set()
+  const startSet = new Set()
+  const spottingSet = new Set()
+
+  entries.forEach(e => {
+    const pbac = Number(e?.pbac?.dayScore ?? 0)
+    if (pbac > 0 && pbac <= rules.spottingMax) spottingSet.add(e.date)
+  })
+
+  cycles.forEach(cycle => {
+    const firstBleed = cycle.days.find(d => !d.spotting)
+    if (firstBleed) startSet.add(firstBleed.date)
+    cycle.days.forEach(day => {
+      if (day.spotting) spottingSet.add(day.date)
+      else periodSet.add(day.date)
+    })
+  })
+
+  return { periodSet, startSet, spottingSet, cycles }
 }
 
 // ---------- UI Bits ----------
@@ -224,53 +589,151 @@ function NrsSlider({ value, onChange, disabled=false }) {
   )
 }
 
-const PBAC_WEIGHTS = { pad: [0,1,5], tampon: [0,5,10], cup: [0,10,20] } // low/mid/high
+const PBAC_WEIGHTS = {
+  pad: [1, 5, 20],
+  tampon: [1, 5, 10],
+}
 
-function PbacMini({ state, setState, disabled=false }) {
-  const update = (kind, fill) => {
-    const list = state.products.filter(p=>p.kind!==kind)
+const PBAC_RULES = {
+  spottingMax: 4,
+  bleedingMin: 5,
+  minZerosBeforeNewBleed: 2,
+  clots: { none: 0, small: 1, large: 5 },
+  floodingPointsPerEpisode: 5,
+  maxFloodingEpisodesPerDay: 6,
+}
+
+function PbacMini({ state, setState, disabled = false }) {
+  const { products = [], clots = 'none', floodingEpisodes = 0, cupMl = 0 } = state
+  const safeEpisodes = clamp(Number.isFinite(Number(floodingEpisodes)) ? Number(floodingEpisodes) : 0, 0, PBAC_RULES.maxFloodingEpisodesPerDay)
+  const score = useMemo(() => computePbacDayScore({ products, clots, floodingEpisodes: safeEpisodes }), [products, clots, safeEpisodes])
+
+  useEffect(() => {
+    if (state.dayScore !== score || state.floodingEpisodes !== safeEpisodes) {
+      setState({ ...state, dayScore: score, floodingEpisodes: safeEpisodes })
+    }
+  }, [score, safeEpisodes])
+
+  const updateProduct = (kind, fill) => {
+    const list = products.filter(p => p.kind !== kind)
     setState({ ...state, products: [...list, { kind, fill }] })
   }
-  const score = useMemo(()=>{
-    const map = { low:0, mid:1, high:2 }
-    let s = 0
-    state.products.forEach(p=>{ s += PBAC_WEIGHTS[p.kind][map[p.fill]] })
-    if (state.clots==='small') s += 5
-    if (state.clots==='large') s += 10
-    if (state.flooding) s += 20
-    return s
-  }, [state])
-  useEffect(()=>setState({ ...state, dayScore: score }), [score])
-  const FillBtn = ({label, fill, active, onClick, disabled = false}) => (
-    <button onClick={onClick} disabled={disabled} className={`px-3 py-2 rounded-xl border mr-2 ${active ? 'bg-rose-600 text-white border-rose-600' : 'border-rose-200'} disabled:opacity-50 disabled:pointer-events-none`}>{label}</button>
-  )
+
+  const updateCup = value => {
+    const v = clamp(Math.round(Number(value) || 0), 0, 120)
+    setState({ ...state, cupMl: v })
+  }
+
+  const adjustEpisodes = delta => {
+    if (disabled) return
+    const next = clamp(safeEpisodes + delta, 0, PBAC_RULES.maxFloodingEpisodesPerDay)
+    setState({ ...state, floodingEpisodes: next })
+  }
+
   const ProdRow = ({ kind, label }) => {
-    const current = state.products.find(p=>p.kind===kind)?.fill || 'low'
+    const current = products.find(p => p.kind === kind)?.fill || 'light'
+    const options = [
+      { id: 'light', label: 'leicht' },
+      { id: 'medium', label: 'mittel' },
+      { id: 'heavy', label: 'stark' },
+    ]
     return (
       <div className="mb-2">
         <div className="text-sm mb-1">{label}</div>
-        <div className="flex">
-          {['low','mid','high'].map(f=>
-            <FillBtn key={f} label={f==='low'?'leicht':f==='mid'?'mittel':'stark'} fill={f} active={current===f} onClick={()=>update(kind,f)} disabled={disabled} />
-          )}
+        <div className="flex flex-wrap gap-2">
+          {options.map(opt => (
+            <Chip
+              key={opt.id}
+              active={current === opt.id}
+              onClick={() => !disabled && updateProduct(kind, opt.id)}
+              disabled={disabled}
+            >
+              {opt.label}
+            </Chip>
+          ))}
         </div>
       </div>
     )
   }
+
   return (
-    <Section title={STR.pbacTitle} hint={STR.pbacHint} right={<Tooltip text={STR.pbacHint} />}>
+    <Section title={STR.pbacTitle} hint={STR.pbacHint} right={<Tooltip text={`${STR.pbacGuide} ${STR.pbacCupNote}`} />}>
       <div className="mb-2">
-        <Chip active={!!state.periodStart} onClick={()=>setState({ ...state, periodStart: !state.periodStart })} disabled={disabled}>{STR.periodStart}</Chip>
+        <Chip active={!!state.periodStart} onClick={() => setState({ ...state, periodStart: !state.periodStart })} disabled={disabled}>
+          {STR.periodStart}
+        </Chip>
       </div>
       <ProdRow kind="pad" label="Binde" />
       <ProdRow kind="tampon" label="Tampon" />
-      <ProdRow kind="cup" label="Menstruationstasse" />
-      <div className="mt-2 flex items-center gap-2">
-        <Chip active={state.clots==='small'} onClick={()=>setState({ ...state, clots: state.clots==='small'? 'none':'small' })} disabled={disabled}>Klumpen klein</Chip>
-        <Chip active={state.clots==='large'} onClick={()=>setState({ ...state, clots: state.clots==='large'? 'none':'large' })} disabled={disabled}>Klumpen groß</Chip>
-        <Chip active={!!state.flooding} onClick={()=>setState({ ...state, flooding: !state.flooding })} disabled={disabled}>Flooding</Chip>
+      <div className="mb-2">
+        <div className="text-sm flex items-center justify-between">
+          <span>{STR.pbacCupLabel}</span>
+          <Tooltip text={STR.pbacCupHint} />
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            type="number"
+            min={0}
+            max={120}
+            step={1}
+            aria-label={STR.cupMlLabel}
+            className="w-28 border rounded-xl px-3 py-2"
+            value={cupMl ?? 0}
+            onChange={e => updateCup(e.target.value)}
+            disabled={disabled}
+          />
+          <span className="text-xs text-rose-700">{STR.pbacCupHint}</span>
+        </div>
       </div>
-      <div className="mt-3 text-sm">Tages-PBAC: <span className="font-semibold">{score}</span></div>
+      <div className="mt-2">
+        <div className="flex items-center justify-between text-sm">
+          <span>{STR.pbacFloodingEpisodes}</span>
+          <Tooltip text={STR.pbacFloodingHint} />
+        </div>
+        <div className="mt-2 flex items-center gap-3">
+          <button
+            type="button"
+            aria-label="Flooding verringern"
+            className="w-8 h-8 rounded-full border bg-white disabled:opacity-50"
+            onClick={() => adjustEpisodes(-1)}
+            disabled={disabled || safeEpisodes <= 0}
+          >
+            −
+          </button>
+          <span className="min-w-[2rem] text-center font-semibold" aria-live="polite">
+            {safeEpisodes}
+          </span>
+          <button
+            type="button"
+            aria-label="Flooding erhöhen"
+            className="w-8 h-8 rounded-full border bg-white disabled:opacity-50"
+            onClick={() => adjustEpisodes(1)}
+            disabled={disabled || safeEpisodes >= PBAC_RULES.maxFloodingEpisodesPerDay}
+          >
+            +
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Chip
+          active={clots === 'small'}
+          onClick={() => setState({ ...state, clots: clots === 'small' ? 'none' : 'small' })}
+          disabled={disabled}
+        >
+          {STR.pbacClotSmall}
+        </Chip>
+        <Chip
+          active={clots === 'large'}
+          onClick={() => setState({ ...state, clots: clots === 'large' ? 'none' : 'large' })}
+          disabled={disabled}
+        >
+          {STR.pbacClotLarge}
+        </Chip>
+      </div>
+      <div className="mt-1 text-xs text-rose-700">{STR.pbacClotHint}</div>
+      <div className="mt-3 text-sm">
+        Tages-PBAC (Higham): <span className="font-semibold">{score}</span>
+      </div>
     </Section>
   )
 }
@@ -314,40 +777,6 @@ function SymptomPicker({ selected, setSelected, disabled=false }) {
   )
 }
 
-function MedicationQuick({ meds, setMeds, disabled=false }) {
-  const [taking, setTaking] = useState(meds.length>0)
-  const [name, setName] = useState('')
-  const [dose, setDose] = useState('')
-  const add = () => {
-    if (disabled) return;
-    if (!name.trim()) return
-    setMeds([...(meds||[]), { name: name.trim(), dose: dose.trim(), ts: Date.now() }])
-    setName(''); setDose(''); setTaking(true)
-  }
-  return (
-    <Section title={STR.medsQ}>
-      <div className="flex gap-2 mb-3">
-        <Chip active={!taking} onClick={()=>{ if (disabled) return; setTaking(false); setMeds([]) }} disabled={disabled}>Nein</Chip>
-        <Chip active={taking} onClick={()=>{ if (disabled) return; setTaking(true) }} disabled={disabled}>Ja</Chip>
-      </div>
-      {taking && (
-        <div>
-          <div className="mb-2 flex flex-wrap gap-2">
-            {meds.map((m,i)=>(
-              <span key={i} className="px-3 py-1 rounded-full bg-gray-100 text-sm">{m.name}{m.dose?` ${m.dose}`:''}</span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input aria-label="Medikament" className="flex-1 border rounded-xl px-3 py-2" placeholder="Name" value={name} onChange={e=>setName(e.target.value)} disabled={disabled} />
-            <input aria-label="Dosis" className="w-28 border rounded-xl px-3 py-2" placeholder="Dosis" value={dose} onChange={e=>setDose(e.target.value)} disabled={disabled} />
-            <button className="px-3 py-2 rounded-xl bg-rose-600 text-white disabled:opacity-50 disabled:pointer-events-none" onClick={add} disabled={disabled}>Hinzufügen</button>
-          </div>
-        </div>
-      )}
-    </Section>
-  )
-}
-
 function SleepScale({ value, onChange, disabled=false }) {
   return (
     <Section title={STR.sleepQ} hint={STR.sleepHint}>
@@ -356,8 +785,425 @@ function SleepScale({ value, onChange, disabled=false }) {
   )
 }
 
+function PainDetails({ value, onChange, disabled = false }) {
+  const [open, setOpen] = useState(false)
+  if (!value) return null
+  const dysp = value.dyspareunia
+  const toggleTiming = key => {
+    if (disabled) return
+    onChange({ ...value, dyspareunia: { ...dysp, timing: { ...dysp.timing, [key]: !dysp.timing[key] } } })
+  }
+  const toggleLocation = key => {
+    if (disabled) return
+    onChange({ ...value, dyspareunia: { ...dysp, location: { ...dysp.location, [key]: !dysp.location[key] } } })
+  }
+  const toggleAvoidance = () => {
+    if (disabled) return
+    onChange({ ...value, dyspareunia: { ...dysp, avoidance: !dysp.avoidance } })
+  }
+  const updateDyspNrs = v => {
+    if (disabled) return
+    onChange({ ...value, dyspareunia: { ...dysp, nrs: v } })
+  }
+  const updateField = (field, v) => {
+    if (disabled) return
+    onChange({ ...value, [field]: v })
+  }
+  return (
+    <section className="p-4">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-semibold text-rose-900">{STR.subNrsTitle}</h2>
+        <button
+          type="button"
+          className="text-sm text-rose-700 underline"
+          onClick={() => setOpen(o => !o)}
+        >
+          {open ? STR.lessDetails : STR.moreDetails}
+        </button>
+      </div>
+      {open && (
+        <div className="bg-white rounded-2xl shadow p-3">
+          <div className="mb-4">
+            <div className="text-sm font-medium mb-2">{STR.dyspareuniaLabel}: <b>{dysp.nrs}</b></div>
+            <Range value={dysp.nrs} onChange={updateDyspNrs} aria={STR.dyspareuniaLabel} disabled={disabled} />
+            <div className="mt-2 text-xs text-rose-700">Zeitpunkt</div>
+            <div className="flex flex-wrap gap-2 mt-1">
+              <Chip active={dysp.timing.during} onClick={() => toggleTiming('during')} disabled={disabled}>{STR.timingDuring}</Chip>
+              <Chip active={dysp.timing.after} onClick={() => toggleTiming('after')} disabled={disabled}>{STR.timingAfter}</Chip>
+            </div>
+            <div className="mt-3 text-xs text-rose-700">Lokalisation</div>
+            <div className="flex flex-wrap gap-2 mt-1">
+              <Chip active={dysp.location.superficial} onClick={() => toggleLocation('superficial')} disabled={disabled}>{STR.locationSuperficial}</Chip>
+              <Chip active={dysp.location.deep} onClick={() => toggleLocation('deep')} disabled={disabled}>{STR.locationDeep}</Chip>
+            </div>
+            <div className="mt-3">
+              <Chip active={dysp.avoidance} onClick={toggleAvoidance} disabled={disabled}>{STR.avoidanceLabel}</Chip>
+            </div>
+          </div>
+          <div className="mb-4">
+            <div className="text-sm font-medium mb-2">{STR.dysuriaLabel}: <b>{value.dysuria}</b></div>
+            <Range value={value.dysuria} onChange={v => updateField('dysuria', v)} aria={STR.dysuriaLabel} disabled={disabled} />
+          </div>
+          <div>
+            <div className="text-sm font-medium mb-2">{STR.dyscheziaLabel}: <b>{value.dyschezia}</b></div>
+            <Range value={value.dyschezia} onChange={v => updateField('dyschezia', v)} aria={STR.dyscheziaLabel} disabled={disabled} />
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function PainInterferenceMini({ value, onChange, disabled = false, date }) {
+  if (!value || !date) return null
+  const peg = value.peg3
+  const update = (field, val) => {
+    if (disabled) return
+    const nextPeg = { ...peg, [field]: val }
+    const rawSum = nextPeg.pain + nextPeg.enjoyment + nextPeg.activity
+    onChange({ date, peg3: nextPeg, rawSum })
+  }
+  return (
+    <Section title={STR.painInterferenceTitle} hint={`${STR.pegHint} ${STR.weekliesInfo}`}>
+      <div className="space-y-4">
+        <div>
+          <div className="text-sm font-medium mb-1">{STR.pegPain}: <b>{peg.pain}</b></div>
+          <Range value={peg.pain} onChange={v => update('pain', v)} aria={STR.pegPain} disabled={disabled} />
+        </div>
+        <div>
+          <div className="text-sm font-medium mb-1">{STR.pegEnjoyment}: <b>{peg.enjoyment}</b></div>
+          <Range value={peg.enjoyment} onChange={v => update('enjoyment', v)} aria={STR.pegEnjoyment} disabled={disabled} />
+        </div>
+        <div>
+          <div className="text-sm font-medium mb-1">{STR.pegActivity}: <b>{peg.activity}</b></div>
+          <Range value={peg.activity} onChange={v => update('activity', v)} aria={STR.pegActivity} disabled={disabled} />
+        </div>
+        <div className="text-sm">Summe (PEG-3): <span className="font-semibold">{value.rawSum}</span></div>
+      </div>
+    </Section>
+  )
+}
+
+function PromisWeeklyMini({ value, onChange, disabled = false, date }) {
+  const [showFatigue, setShowFatigue] = useState(() => !!(value && value.fatigue4aRaw > 0))
+  useEffect(() => {
+    if (value?.fatigue4aRaw > 0) setShowFatigue(true)
+  }, [value?.fatigue4aRaw])
+  if (!value || !date) return null
+
+  const handleToggleFatigue = () => {
+    if (disabled) return
+    if (showFatigue) {
+      setShowFatigue(false)
+      onChange({ date, sleep4a: value.sleep4a, sleep4aRaw: value.sleep4aRaw, fatigue4a: [0, 0, 0, 0], fatigue4aRaw: 0 })
+    } else {
+      setShowFatigue(true)
+    }
+  }
+
+  const updateArray = (type, index, val) => {
+    if (disabled) return
+    const arr = type === 'sleep' ? value.sleep4a.slice() : value.fatigue4a.slice()
+    arr[index] = val
+    const raw = arr.reduce((a, b) => a + b, 0)
+    if (type === 'sleep') {
+      onChange({ date, sleep4a: arr, sleep4aRaw: raw, fatigue4a: value.fatigue4a, fatigue4aRaw: value.fatigue4aRaw })
+    } else {
+      onChange({ date, sleep4a: value.sleep4a, sleep4aRaw: value.sleep4aRaw, fatigue4a: arr, fatigue4aRaw: raw })
+    }
+  }
+
+  const LikertRow = ({ items, values, type }) => (
+    <div className="space-y-3">
+      {items.map((text, idx) => (
+        <div key={idx}>
+          <div className="text-sm mb-1">{text}</div>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                type="button"
+                className={`w-10 h-10 rounded-full border ${values[idx] === n ? 'bg-rose-600 text-white border-rose-600' : 'bg-white'} disabled:opacity-50`}
+                onClick={() => updateArray(type, idx, n)}
+                disabled={disabled}
+                aria-label={`${text} ${n}`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  return (
+    <Section title={STR.promisTitle} hint={`${STR.promisSleepHint} ${STR.weekliesInfo}`}>
+      <div className="space-y-4">
+        <LikertRow items={PROMIS_SLEEP_ITEMS} values={value.sleep4a} type="sleep" />
+        <div className="text-sm">Summe Schlaf: <span className="font-semibold">{value.sleep4aRaw}</span></div>
+        <div className="pt-2 border-t border-rose-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-rose-700">{STR.promisFatigueHint}</span>
+            <button type="button" className="text-sm text-rose-700 underline" onClick={handleToggleFatigue}>
+              {showFatigue ? STR.promisFatigueHide : STR.promisFatigueToggle}
+            </button>
+          </div>
+          {showFatigue && (
+            <div className="space-y-4">
+              <LikertRow items={PROMIS_FATIGUE_ITEMS} values={value.fatigue4a} type="fatigue" />
+              <div className="text-sm">Summe Fatigue: <span className="font-semibold">{value.fatigue4aRaw}</span></div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+function UroInputs({ value, onChange, disabled = false }) {
+  if (!value) return null
+  const setField = (field, val) => {
+    if (disabled) return
+    onChange({ ...value, [field]: val })
+  }
+  return (
+    <Section title={STR.uroTitle} hint="Frequenzen als Kategorien, Drang separat.">
+      <div className="mb-4">
+        <div className="text-sm mb-1">{STR.urinationFrequencyLabel}</div>
+        <div className="flex flex-wrap gap-2">
+          {FREQUENCY_OPTIONS.map(opt => (
+            <Chip key={opt.id} active={value.urinationFrequency === opt.id} onClick={() => setField('urinationFrequency', opt.id)} disabled={disabled}>
+              {opt.label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+      <div className="mb-4">
+        <div className="text-sm mb-1">{STR.urgencyLabel}</div>
+        <div className="flex gap-2">
+          <Chip active={!value.urgency} onClick={() => setField('urgency', false)} disabled={disabled}>Nein</Chip>
+          <Chip active={value.urgency} onClick={() => setField('urgency', true)} disabled={disabled}>Ja</Chip>
+        </div>
+      </div>
+      <div>
+        <div className="text-sm mb-1">{STR.urgencyFrequencyLabel}</div>
+        <div className="flex flex-wrap gap-2">
+          {FREQUENCY_OPTIONS.map(opt => (
+            <Chip key={opt.id} active={value.urgencyFrequency === opt.id} onClick={() => setField('urgencyFrequency', opt.id)} disabled={disabled || !value.urgency}>
+              {opt.label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+function BowelInputs({ value, onChange, disabled = false }) {
+  if (!value) return null
+  const setField = (field, val) => {
+    if (disabled) return
+    onChange({ ...value, [field]: val })
+  }
+  return (
+    <Section title={STR.bowelTitle} hint="Frequenzen & Bristol-Form dokumentieren.">
+      <div className="mb-4">
+        <div className="text-sm mb-1">{STR.bowelFrequencyLabel}</div>
+        <div className="flex flex-wrap gap-2">
+          {FREQUENCY_OPTIONS.map(opt => (
+            <Chip key={opt.id} active={value.bowelFrequency === opt.id} onClick={() => setField('bowelFrequency', opt.id)} disabled={disabled}>
+              {opt.label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="text-sm mb-1">{STR.bristolLabel}</div>
+        <div className="flex flex-wrap gap-2">
+          {BRISTOL_OPTIONS.map(num => (
+            <button
+              key={num}
+              type="button"
+              className={`w-10 h-10 rounded-full border ${value.bristol === num ? 'bg-rose-600 text-white border-rose-600' : 'bg-white'} disabled:opacity-50`}
+              onClick={() => setField('bristol', num)}
+              disabled={disabled}
+            >
+              {num}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+function TherapyManager({ list, onChange, disabled = false }) {
+  const [draft, setDraft] = useState({
+    id: null,
+    class: THERAPY_CLASSES[0],
+    drug: '',
+    dose: '',
+    regimen: '',
+    adherence: 100,
+    adverse: { hasAe: false, top: [] },
+  })
+  const [tagInput, setTagInput] = useState('')
+
+  const resetDraft = () => {
+    setDraft({ id: null, class: THERAPY_CLASSES[0], drug: '', dose: '', regimen: '', adherence: 100, adverse: { hasAe: false, top: [] } })
+    setTagInput('')
+  }
+
+  const commit = () => {
+    if (disabled) return
+    const drug = draft.drug.trim()
+    if (!drug) return
+    const item = {
+      ...draft,
+      id: draft.id || `therapy_${Date.now()}`,
+      drug,
+      dose: draft.dose.trim(),
+      regimen: draft.regimen.trim(),
+      adverse: {
+        hasAe: draft.adverse.hasAe,
+        top: draft.adverse.top.slice(0, 3),
+      },
+    }
+    const updated = [...list.filter(t => t.id !== item.id), item]
+    onChange(updated)
+    resetDraft()
+  }
+
+  const remove = id => {
+    if (disabled) return
+    onChange(list.filter(t => t.id !== id))
+  }
+
+  const edit = item => {
+    if (disabled) return
+    setDraft({ ...item })
+    setTagInput('')
+  }
+
+  const toggleAe = () => {
+    if (disabled) return
+    setDraft(d => ({ ...d, adverse: { ...d.adverse, hasAe: !d.adverse.hasAe, top: !d.adverse.hasAe ? d.adverse.top : [] } }))
+  }
+
+  const addTag = tag => {
+    const t = tag.trim()
+    if (!t) return
+    setDraft(d => {
+      if (d.adverse.top.includes(t) || d.adverse.top.length >= 3) return d
+      return { ...d, adverse: { ...d.adverse, top: [...d.adverse.top, t] } }
+    })
+  }
+
+  const removeTag = tag => {
+    setDraft(d => ({ ...d, adverse: { ...d.adverse, top: d.adverse.top.filter(x => x !== tag) } }))
+  }
+
+  return (
+    <Section title={STR.therapyTitle} hint="Strukturiert erfassen, max. drei Nebenwirkungen je Eintrag.">
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-3">
+          <label className="text-sm">
+            <span className="block mb-1">{STR.therapyClassLabel}</span>
+            <select className="w-full border rounded-xl px-3 py-2" value={draft.class} onChange={e => setDraft(d => ({ ...d, class: e.target.value }))} disabled={disabled}>
+              {THERAPY_CLASSES.map(cls => <option key={cls} value={cls}>{cls}</option>)}
+            </select>
+          </label>
+          <label className="text-sm">
+            <span className="block mb-1">{STR.therapyDrugLabel}</span>
+            <input className="w-full border rounded-xl px-3 py-2" value={draft.drug} onChange={e => setDraft(d => ({ ...d, drug: e.target.value }))} disabled={disabled} />
+          </label>
+          <label className="text-sm">
+            <span className="block mb-1">{STR.therapyDoseLabel}</span>
+            <input className="w-full border rounded-xl px-3 py-2" value={draft.dose} onChange={e => setDraft(d => ({ ...d, dose: e.target.value }))} disabled={disabled} />
+          </label>
+          <label className="text-sm">
+            <span className="block mb-1">{STR.therapyRegimenLabel}</span>
+            <input className="w-full border rounded-xl px-3 py-2" value={draft.regimen} onChange={e => setDraft(d => ({ ...d, regimen: e.target.value }))} disabled={disabled} />
+          </label>
+          <label className="text-sm">
+            <span className="block mb-1">{STR.therapyAdherenceLabel}</span>
+            <select className="w-full border rounded-xl px-3 py-2" value={draft.adherence} onChange={e => setDraft(d => ({ ...d, adherence: Number(e.target.value) }))} disabled={disabled}>
+              {ADHERENCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}%</option>)}
+            </select>
+          </label>
+        </div>
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Chip active={draft.adverse.hasAe} onClick={toggleAe} disabled={disabled}>{STR.therapyHasAe}</Chip>
+            <span className="text-xs text-rose-700">{STR.therapyAeHint}</span>
+          </div>
+          {draft.adverse.hasAe && (
+            <div>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {draft.adverse.top.map(tag => (
+                  <span key={tag} className="px-3 py-1 rounded-full bg-rose-100 text-sm flex items-center gap-2">
+                    {tag}
+                    <button type="button" className="text-xs" onClick={() => removeTag(tag)} disabled={disabled}>×</button>
+                  </span>
+                ))}
+              </div>
+              {draft.adverse.top.length < 3 && (
+                <input
+                  className="w-full border rounded-xl px-3 py-2 text-sm"
+                  placeholder="Tag eingeben und Enter drücken"
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addTag(tagInput)
+                      setTagInput('')
+                    }
+                  }}
+                  disabled={disabled}
+                />
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button type="button" className="px-4 py-2 rounded-xl bg-rose-600 text-white disabled:opacity-50" onClick={commit} disabled={disabled}>{STR.therapyAdd}</button>
+          <button type="button" className="px-4 py-2 rounded-xl border" onClick={resetDraft} disabled={disabled}>Zurücksetzen</button>
+        </div>
+        <div className="border-t pt-3">
+          {list.length === 0 ? (
+            <p className="text-sm text-gray-600">{STR.therapyListEmpty}</p>
+          ) : (
+            <ul className="space-y-3">
+              {list.map(item => (
+                <li key={item.id} className="border rounded-xl p-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <div className="font-medium text-sm">{item.class} · {item.drug}</div>
+                      <div className="text-xs text-gray-600">{[item.dose, item.regimen].filter(Boolean).join(' · ')}</div>
+                      <div className="text-xs text-gray-600">Adhärenz: {item.adherence}%</div>
+                      {item.adverse.hasAe && item.adverse.top.length > 0 && (
+                        <div className="text-xs text-rose-700 mt-1">AE: {item.adverse.top.join(', ')}</div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <button type="button" className="text-xs underline" onClick={() => edit(item)} disabled={disabled}>{STR.therapyEdit}</button>
+                      <button type="button" className="text-xs underline text-red-600" onClick={() => remove(item.id)} disabled={disabled}>{STR.therapyDelete}</button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </Section>
+  )
+}
+
 // ---------- Charts (lightweight SVG + simple markers) ----------
-function Sparkline({ data=[0], mask=[], width=280, height=40 }) {
+function Sparkline({ data=[0], mask=[], spottingMask=[], starts=[], width=280, height=40 }) {
   const max = Math.max(10, ...data)
   const pts = data.map((v,i)=>{
     const x = (i/(data.length-1||1))*(width-4)+2
@@ -368,6 +1214,11 @@ function Sparkline({ data=[0], mask=[], width=280, height=40 }) {
     <div>
       <svg width={width} height={height} aria-label="Sparkline">
         <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="2" />
+        {starts?.length === data.length && starts.map((flag,i) => flag ? (() => {
+          const x = (i/(data.length-1||1))*(width-4)+2
+          const y = height - (data[i]/max)*(height-4) - 2
+          return <circle key={i} cx={x} cy={y} r={3} fill="#be123c" />
+        })() : null)}
       </svg>
       {/* period mask row */}
       {!!mask.length && (
@@ -375,7 +1226,93 @@ function Sparkline({ data=[0], mask=[], width=280, height=40 }) {
           {mask.map((m,i)=> <div key={i} className={`h-1 flex-1 ${m?'bg-rose-400':'bg-transparent'}`} />)}
         </div>
       )}
+      {!!spottingMask.length && (
+        <div className="mt-0.5 flex gap-1" aria-label={STR.spottingLabel}>
+          {spottingMask.map((s,i)=> <div key={i} className={`h-[2px] flex-1 ${s?'bg-rose-300':'bg-transparent'}`} />)}
+        </div>
+      )}
     </div>
+  )
+}
+
+function PbacWeekBars({ days = [] }) {
+  const max = Math.max(PBAC_RULES.bleedingMin, ...days.map(d => d.pbac || 0), 1)
+  return (
+    <div className="mt-4">
+      <div className="flex items-end gap-2 h-24">
+        {days.map((day, idx) => {
+          const value = Math.max(0, Number(day.pbac || 0))
+          const heightPercent = value ? Math.max(6, (value / max) * 100) : 0
+          const isPeriod = !!day.period
+          const isSpotting = !!day.spotting && !isPeriod
+          const barStyle = isPeriod
+            ? { height: `${heightPercent}%`, backgroundImage: 'repeating-linear-gradient(135deg, rgba(225,29,72,0.6) 0, rgba(225,29,72,0.6) 6px, rgba(244,114,182,0.2) 6px, rgba(244,114,182,0.2) 12px)' }
+            : { height: `${heightPercent}%` }
+          return (
+            <div key={day.date || idx} className="flex-1 relative h-full" aria-label={`${day.date || ''} PBAC ${value}`}>
+              {value > 0 && (
+                <div
+                  className={`w-full rounded-t-md ${isPeriod ? 'bg-rose-400' : 'bg-rose-200'}`}
+                  style={barStyle}
+                />
+              )}
+              {day.start && (
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-rose-700" />
+              )}
+              {isSpotting && (
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-rose-400" />
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <div className="mt-2 flex justify-between text-xs text-gray-500">
+        {days.map((day, idx) => (
+          <span key={day.date || idx} className="flex-1 text-center">
+            {(day.date || '').slice(5)}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function LagScatter({ pairs = [] }) {
+  const width = 280
+  const height = 180
+  const padding = 24
+  const axisMax = 10
+  const axisMin = 0
+  const scaleX = value => {
+    const clamped = clamp(value, axisMin, axisMax)
+    return padding + ((clamped - axisMin) / (axisMax - axisMin)) * (width - padding * 2)
+  }
+  const scaleY = value => {
+    const clamped = clamp(value, axisMin, axisMax)
+    return height - padding - ((clamped - axisMin) / (axisMax - axisMin)) * (height - padding * 2)
+  }
+  return (
+    <svg width={width} height={height} className="w-full" aria-label="Lag-Scatterplot">
+      <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#9f1239" strokeWidth="1" />
+      <line x1={padding} y1={height - padding} x2={padding} y2={padding} stroke="#9f1239" strokeWidth="1" />
+      <text x={width - padding} y={height - padding + 16} className="text-[10px] fill-rose-900" textAnchor="end">Schlaf</text>
+      <text x={padding - 14} y={padding} className="text-[10px] fill-rose-900" textAnchor="end">Schmerz</text>
+      {[0,5,10].map(tick => (
+        <g key={`x${tick}`}>
+          <line x1={scaleX(tick)} y1={height - padding} x2={scaleX(tick)} y2={height - padding + 4} stroke="#9f1239" strokeWidth="1" />
+          <text x={scaleX(tick)} y={height - padding + 14} className="text-[9px] fill-rose-900" textAnchor="middle">{tick}</text>
+        </g>
+      ))}
+      {[0,5,10].map(tick => (
+        <g key={`y${tick}`}>
+          <line x1={padding - 4} y1={scaleY(tick)} x2={padding} y2={scaleY(tick)} stroke="#9f1239" strokeWidth="1" />
+          <text x={padding - 6} y={scaleY(tick) + 3} className="text-[9px] fill-rose-900" textAnchor="end">{tick}</text>
+        </g>
+      ))}
+      {pairs.map((p, idx) => (
+        <circle key={idx} cx={scaleX(p.x)} cy={scaleY(p.y)} r={3} fill="#f43f5e" opacity={0.7} />
+      ))}
+    </svg>
   )
 }
 
@@ -390,6 +1327,7 @@ function CalendarHeatmap({ days }) {
           <div key={i} className={`relative w-[${cell}px] h-[${cell}px] ${c} rounded`}>
             {d.period && <div className="absolute inset-x-0 bottom-0 h-1 bg-rose-400 rounded-b" />}
             {d.periodStart && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-rose-700" />}
+            {d.spotting && !d.period && <div className="absolute inset-x-1 bottom-1 h-[2px] bg-rose-400" />}
           </div>
         )
       })}
@@ -426,7 +1364,7 @@ function DateNav({ activeDate, setActiveDate, hasEntry, onPrev, onNext, onToday,
 export default function EndoMiniApp() {
   const [tab, setTab] = useState('today') // today|trends|entries|export
   const [activeDate, setActiveDate] = useState(todayISO())
-  const [settings, setSettings] = useLocalState(SETTINGS_KEY, { quickMode: true, encryption: false })
+  const [settings, setSettings] = useLocalState(SETTINGS_KEY, { quickMode: true, encryption: false, kdfStrong: false })
   const [pass, setPass] = useState('')
   const [locked, setLocked] = useState(false)
 
@@ -451,7 +1389,8 @@ export default function EndoMiniApp() {
     if (!loaded) return
     if (settings.encryption) {
       (async () => {
-        const bundle = await encryptBlob(entries, pass)
+        const iterations = settings.kdfStrong ? 310000 : 120000
+        const bundle = await encryptBlob(entries, pass, iterations)
         localStorage.setItem(ENC_KEY, JSON.stringify(bundle))
         localStorage.removeItem(STORAGE_KEY)
       })()
@@ -459,11 +1398,11 @@ export default function EndoMiniApp() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
       localStorage.removeItem(ENC_KEY)
     }
-  }, [entries, settings.encryption, loaded, pass])
+  }, [entries, settings.encryption, settings.kdfStrong, loaded, pass])
 
   // Today Wizard state
   const [step, setStep] = useState(0)
-  const totalSteps = 6
+  const totalSteps = 9
   const yesterday = useMemo(()=>{
     const y = new Date(activeDate); y.setDate(y.getDate()-1)
     const iso = y.toISOString().slice(0,10)
@@ -471,32 +1410,57 @@ export default function EndoMiniApp() {
   }, [entries, activeDate])
 
   const [nrs, setNrs] = useState(3)
-  const [pbac, setPbac] = useState({ products: [], clots: 'none', flooding: false, dayScore: 0, periodStart: false })
+  const [pbac, setPbac] = useState(() => ({ ...DEFAULT_PBAC }))
   const [zones, setZones] = useState([])
   const [symptoms, setSymptoms] = useState([])
-  const [meds, setMeds] = useState([])
+  const [therapy, setTherapy] = useState([])
   const [sleep, setSleep] = useState(5)
+  const [subNrs, setSubNrs] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
+  const [uro, setUro] = useState(() => ({ ...DEFAULT_URO }))
+  const [bowel, setBowel] = useState(() => ({ ...DEFAULT_BOWEL }))
+  const [painInterference, setPainInterference] = useState(null)
+  const [promis, setPromis] = useState(null)
   const [savedFlag, setSavedFlag] = useState(false) // legacy, not used
   const [isEditing, setIsEditing] = useState(true)
   const [banner, setBanner] = useState({ show:false, text:'' })
   const [confirmOverwrite, setConfirmOverwrite] = useState(false)
 
   // section refs for progressive reveal scrolling
-  const sectionRefs = [useRef(null), useRef(null), useRef(null), useRef(null), useRef(null), useRef(null)]
+  const sectionRefs = Array.from({ length: totalSteps }, () => useRef(null))
 
   // Load entry when switching day
   useEffect(()=>{
     const e = entries.find(x=>x.date===activeDate)
+    const weekday = isoWeekday(activeDate)
+    const isPegDay = weekday === 1
+    const isPromisDay = weekday === 0
     if (e) {
       setNrs(e.nrs ?? 3)
-      setPbac(e.pbac ?? { products: [], clots: 'none', flooding: false, dayScore: 0, periodStart: false })
+      setPbac(normalizePbac(e.pbac))
       setZones(e.zones ?? [])
       setSymptoms(e.symptoms ?? [])
-      setMeds(e.medication ?? [])
+      setTherapy(normalizeTherapy(e.therapy, e.medication))
       setSleep(e.sleep ?? 5)
+      setSubNrs(normalizeSubNrs(e.subNrs))
+      setUro(normalizeUro(e.uro))
+      setBowel(normalizeBowel(e.bowel))
+      const normalizedPeg = normalizePainInterference(e.painInterference, e.date)
+      const normalizedPromis = normalizePromis(e.promis, e.date)
+      setPainInterference(isPegDay ? (normalizedPeg || DEFAULT_PAIN_INTERFERENCE(activeDate)) : normalizedPeg)
+      setPromis(isPromisDay ? (normalizedPromis || DEFAULT_PROMIS(activeDate)) : normalizedPromis)
       setIsEditing(false) // vorhandener Tag: zunächst gesperrt
     } else {
-      setNrs(3); setPbac({ products: [], clots:'none', flooding:false, dayScore:0, periodStart:false }); setZones([]); setSymptoms([]); setMeds([]); setSleep(5)
+      setNrs(3)
+      setPbac(normalizePbac(null))
+      setZones([])
+      setSymptoms([])
+      setTherapy([])
+      setSleep(5)
+      setSubNrs(JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
+      setUro({ ...DEFAULT_URO })
+      setBowel({ ...DEFAULT_BOWEL })
+      setPainInterference(isPegDay ? DEFAULT_PAIN_INTERFERENCE(activeDate) : null)
+      setPromis(isPromisDay ? DEFAULT_PROMIS(activeDate) : null)
       setIsEditing(true) // neuer Tag: sofort editierbar
     }
     setStep(e ? totalSteps-1 : 0)
@@ -508,15 +1472,34 @@ export default function EndoMiniApp() {
   function fillLikeYesterday() {
     if (!yesterday) return
     setNrs(yesterday.nrs ?? 3)
-    setPbac(yesterday.pbac ?? { products: [], clots: 'none', flooding: false, dayScore: 0, periodStart:false })
+    setPbac(normalizePbac(yesterday.pbac))
     setZones(yesterday.zones ?? [])
     setSymptoms(yesterday.symptoms ?? [])
-    setMeds(yesterday.medication ?? [])
     setSleep(yesterday.sleep ?? 5)
+    setTherapy(normalizeTherapy(yesterday.therapy, yesterday.medication))
+    setSubNrs(normalizeSubNrs(yesterday.subNrs))
+    setUro(normalizeUro(yesterday.uro))
+    setBowel(normalizeBowel(yesterday.bowel))
+    const weekday = isoWeekday(activeDate)
+    const prevPeg = normalizePainInterference(yesterday.painInterference, yesterday.date)
+    const prevPromis = normalizePromis(yesterday.promis, yesterday.date)
+    setPainInterference(weekday === 1 ? (prevPeg ? { ...prevPeg, date: activeDate } : DEFAULT_PAIN_INTERFERENCE(activeDate)) : prevPeg)
+    setPromis(weekday === 0 ? (prevPromis ? { ...prevPromis, date: activeDate } : DEFAULT_PROMIS(activeDate)) : prevPromis)
   }
 
   function markSymptomFree(){
-    setNrs(0); setPbac({ products: [], clots:'none', flooding:false, dayScore:0, periodStart:false }); setZones([]); setSymptoms([]); setMeds([]); setSleep(7)
+    const weekday = isoWeekday(activeDate)
+    setNrs(0)
+    setPbac(normalizePbac(null))
+    setZones([])
+    setSymptoms([])
+    setTherapy([])
+    setSleep(7)
+    setSubNrs(JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
+    setUro({ ...DEFAULT_URO })
+    setBowel({ ...DEFAULT_BOWEL })
+    setPainInterference(weekday === 1 ? DEFAULT_PAIN_INTERFERENCE(activeDate) : null)
+    setPromis(weekday === 0 ? DEFAULT_PROMIS(activeDate) : null)
   }
 
   function saveToday() {
@@ -531,7 +1514,38 @@ export default function EndoMiniApp() {
   function commitSave() {
     try {
       const d = activeDate
-      const entry = { id: d, date: d, mode: settings.quickMode?'quick':'detail', nrs, pbac, zones, symptoms, medication: meds, sleep }
+      const pbacSave = normalizePbac(pbac)
+      const subNrsSave = normalizeSubNrs(subNrs)
+      const uroSave = normalizeUro(uro)
+      const bowelSave = normalizeBowel(bowel)
+      const therapySave = therapy.map(item => ({
+        ...item,
+        id: item.id || `therapy_${Math.random().toString(36).slice(2,8)}`,
+        adherence: ADHERENCE_OPTIONS.includes(item.adherence) ? item.adherence : 0,
+        adverse: {
+          hasAe: !!item.adverse?.hasAe,
+          top: Array.isArray(item.adverse?.top) ? item.adverse.top.slice(0,3) : [],
+        },
+      }))
+      const pegSave = isoWeekday(d) === 1 && painInterference ? normalizePainInterference({ ...painInterference, date: d }, d) : null
+      const promisSave = isoWeekday(d) === 0 && promis ? normalizePromis({ ...promis, date: d }, d) : null
+      const entry = {
+        id: d,
+        date: d,
+        mode: settings.quickMode ? 'quick' : 'detail',
+        nrs,
+        pbac: pbacSave,
+        zones,
+        symptoms,
+        therapy: therapySave,
+        sleep,
+        subNrs: subNrsSave,
+        uro: uroSave,
+        bowel: bowelSave,
+        painInterference: pegSave,
+        promis: promisSave,
+        medication: [],
+      }
       const others = entries.filter(e=>e.date!==d)
       const sorted = [entry, ...others].sort((a,b)=> (b?.date ?? '').localeCompare(a?.date ?? ''))
       setEntries(sorted)
@@ -544,10 +1558,26 @@ export default function EndoMiniApp() {
     }
   }
 
-  const { periodSet, startSet } = useMemo(()=>flagPeriodDays(entries), [entries])
+  const { periodSet, startSet, spottingSet, cycles } = useMemo(()=>buildPeriodFlags(entries), [entries])
 
-  const last7 = useMemo(()=>entries.slice(0,7).map(e=>e.nrs ?? 0).reverse(), [entries])
-  const last7Mask = useMemo(()=>entries.slice(0,7).map(e=>!!(e?.pbac?.dayScore>0 || e?.pbac?.periodStart)).reverse(), [entries])
+  const last7Days = useMemo(()=>{
+    const arr = []
+    for (let i=6;i>=0;i--) {
+      const dt = new Date(); dt.setDate(dt.getDate()-i)
+      const iso = dt.toISOString().slice(0,10)
+      const e = entries.find(x=>x.date===iso)
+      const pbacScore = Number(e?.pbac?.dayScore ?? 0)
+      arr.push({
+        date: iso,
+        nrs: e?.nrs ?? 0,
+        pbac: pbacScore,
+        period: periodSet.has(iso),
+        start: startSet.has(iso),
+        spotting: spottingSet.has(iso),
+      })
+    }
+    return arr
+  }, [entries, periodSet, startSet, spottingSet])
 
   const last30 = useMemo(()=>{
     const arr = []
@@ -555,22 +1585,71 @@ export default function EndoMiniApp() {
       const dt = new Date(); dt.setDate(dt.getDate()-i)
       const iso = dt.toISOString().slice(0,10)
       const e = entries.find(x=>x.date===iso)
-      arr.push({ date: iso, nrs: e?.nrs ?? 0, period: periodSet.has(iso), periodStart: startSet.has(iso) })
+      arr.push({ date: iso, nrs: e?.nrs ?? 0, period: periodSet.has(iso), periodStart: startSet.has(iso), spotting: spottingSet.has(iso) })
     }
     return arr
-  }, [entries, periodSet, startSet])
+  }, [entries, periodSet, startSet, spottingSet])
+
+  const cycleSummaries = useMemo(() => {
+    return cycles.map(cycle => {
+      const dates = cycle.days.map(d => d.date)
+      const relevant = entries.filter(e => dates.includes(e.date))
+      const nrsValues = relevant.map(e => (typeof e.nrs === 'number' ? e.nrs : null)).filter(v => v !== null)
+      const medianNrs = nrsValues.length ? Number(median(nrsValues).toFixed(1)) : 0
+      const peakNrs = nrsValues.length ? Math.max(...nrsValues) : 0
+      const symptomMap = new Map()
+      relevant.forEach(e => {
+        (e.symptoms || []).forEach(s => {
+          const label = s.label || s.id
+          const intensity = typeof s.intensity === 'number' ? s.intensity : 0
+          symptomMap.set(label, (symptomMap.get(label) || 0) + intensity)
+        })
+      })
+      const topSymptoms = Array.from(symptomMap.entries()).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([label]) => label)
+      return {
+        start: cycle.start,
+        end: cycle.end,
+        pbacSum: cycle.pbacSum,
+        medianNrs,
+        peakNrs,
+        topSymptoms,
+      }
+    })
+  }, [cycles, entries])
+
+  const lagPairs = useMemo(() => {
+    const map = new Map(entries.map(e => [e.date, e]))
+    return entries
+      .map(e => {
+        const prev = map.get(addDaysISO(e.date, -1))
+        if (!prev) return null
+        const sleepVal = typeof prev.sleep === 'number' ? prev.sleep : null
+        const nrsVal = typeof e.nrs === 'number' ? e.nrs : null
+        if (sleepVal === null || nrsVal === null) return null
+        return { x: sleepVal, y: nrsVal }
+      })
+      .filter(Boolean)
+  }, [entries])
 
   const corr = useMemo(()=>{
-    // Pearson r zwischen NRS und Schlaf, falls genügend Daten
-    const xs = entries.map(e=>typeof e.nrs==='number'?e.nrs:null).filter(v=>v!==null)
-    const ys = entries.map(e=>typeof e.sleep==='number'?e.sleep:null).filter(v=>v!==null)
-    const n = Math.min(xs.length, ys.length)
+    const pairs = entries
+      .map(e => {
+        const sleepVal = typeof e.sleep === 'number' ? e.sleep : null
+        const nrsVal = typeof e.nrs === 'number' ? e.nrs : null
+        if (sleepVal === null || nrsVal === null) return null
+        return { x: sleepVal, y: nrsVal }
+      })
+      .filter(Boolean)
+    const n = pairs.length
     if (n < 14) return { n, r: null }
-    const X = xs.slice(0,n), Y = ys.slice(0,n)
-    const mx = X.reduce((a,b)=>a+b,0)/n, my = Y.reduce((a,b)=>a+b,0)/n
-    const num = X.map((x,i)=>(x-mx)*(Y[i]-my)).reduce((a,b)=>a+b,0)
-    const den = Math.sqrt(X.map(x=>Math.pow(x-mx,2)).reduce((a,b)=>a+b,0) * Y.map(y=>Math.pow(y-my,2)).reduce((a,b)=>a+b,0))
-    const r = den ? num/den : 0
+    const mx = pairs.reduce((acc, p) => acc + p.x, 0) / n
+    const my = pairs.reduce((acc, p) => acc + p.y, 0) / n
+    const num = pairs.reduce((acc, p) => acc + (p.x - mx) * (p.y - my), 0)
+    const den = Math.sqrt(
+      pairs.reduce((acc, p) => acc + Math.pow(p.x - mx, 2), 0) *
+      pairs.reduce((acc, p) => acc + Math.pow(p.y - my, 2), 0)
+    )
+    const r = den ? num / den : 0
     return { n, r: Number(r.toFixed(2)) }
   }, [entries])
 
@@ -607,6 +1686,10 @@ export default function EndoMiniApp() {
               <div className="flex items-center justify-between mb-2">
                 <span>Verschlüsselung</span>
                 <input type="checkbox" checked={settings.encryption} onChange={e=>setSettings({...settings, encryption:e.target.checked})} />
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span>{STR.strongerKdf}</span>
+                <input type="checkbox" checked={!!settings.kdfStrong} onChange={e=>setSettings({...settings, kdfStrong:e.target.checked})} disabled={!settings.encryption} />
               </div>
               {settings.encryption && (
                 <div className="mt-2">
@@ -672,11 +1755,28 @@ export default function EndoMiniApp() {
           {/* Progressive reveal: show sections up to current step */}
           <fieldset disabled={!isEditing}>
           <div ref={sectionRefs[0]}>{step>=0 && <NrsSlider value={nrs} onChange={setNrs} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[1]}>{step>=1 && <PbacMini state={pbac} setState={setPbac} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[2]}>{step>=2 && <BodyMapSimple zones={zones} setZones={setZones} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[3]}>{step>=3 && <SymptomPicker selected={symptoms} setSelected={setSymptoms} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[4]}>{step>=4 && <MedicationQuick meds={meds} setMeds={setMeds} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[5]}>{step>=5 && <SleepScale value={sleep} onChange={setSleep} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[1]}>{step>=1 && <PainDetails value={subNrs} onChange={setSubNrs} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[2]}>{step>=2 && <PbacMini state={pbac} setState={setPbac} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[3]}>{step>=3 && <BodyMapSimple zones={zones} setZones={setZones} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[4]}>{step>=4 && <SymptomPicker selected={symptoms} setSelected={setSymptoms} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[5]}>{step>=5 && (
+            <>
+              <UroInputs value={uro} onChange={setUro} disabled={!isEditing} />
+              <BowelInputs value={bowel} onChange={setBowel} disabled={!isEditing} />
+            </>
+          )}</div>
+          <div ref={sectionRefs[6]}>{step>=6 && <TherapyManager list={therapy} onChange={setTherapy} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[7]}>{step>=7 && <SleepScale value={sleep} onChange={setSleep} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[8]}>{step>=8 && (
+            <>
+              {isoWeekday(activeDate) === 1 && painInterference && (
+                <PainInterferenceMini value={painInterference} onChange={setPainInterference} disabled={!isEditing} date={activeDate} />
+              )}
+              {isoWeekday(activeDate) === 0 && promis && (
+                <PromisWeeklyMini value={promis} onChange={setPromis} disabled={!isEditing} date={activeDate} />
+              )}
+            </>
+          )}</div>
 
           <div className="px-4 pb-4 flex gap-2">
             <button className="px-4 py-3 rounded-2xl border flex-1 disabled:opacity-50 disabled:pointer-events-none" disabled={!isEditing} onClick={handlePrev}>{STR.back}</button>
@@ -696,11 +1796,36 @@ export default function EndoMiniApp() {
 
       {tab==='trends' && (
         <div>
-          <Section title="7-Tage Schmerz" hint={`${STR.periodLegend}`}>
-            <Sparkline data={last7.length?last7:[0]} mask={last7Mask} />
+          <Section title="7-Tage Schmerz & PBAC" hint={STR.pbacLegend}>
+            <Sparkline
+              data={last7Days.map(d=>d.nrs)}
+              mask={last7Days.map(d=>d.period)}
+              spottingMask={last7Days.map(d=>d.spotting)}
+              starts={last7Days.map(d=>d.start)}
+            />
+            <PbacWeekBars days={last7Days} />
           </Section>
-          <Section title="Kalender (30 Tage)" hint="Farbe = Schmerzintensität; Punkt = Beginn, Balken = Periode">
+          <Section title="Kalender (30 Tage)" hint="Farbe = Schmerzintensität; Punkt = Beginn, Balken = Periode; Linie = Spotting">
             <CalendarHeatmap days={last30} />
+          </Section>
+          <Section title={STR.cycleCardsTitle} hint="Median/Peak nach Zyklus, PBAC-Summe, häufigste Symptome.">
+            {cycleSummaries.length ? (
+              <div className="space-y-3">
+                {cycleSummaries.map(cycle => (
+                  <div key={cycle.start} className="border rounded-2xl p-3 bg-white shadow-sm">
+                    <div className="text-sm text-gray-600">{cycle.start} – {cycle.end}</div>
+                    <div className="mt-1 font-semibold text-rose-900">{STR.cycleCardPbac}: {cycle.pbacSum}</div>
+                    <div className="mt-1 text-sm">{STR.cycleCardMedian}: {cycle.medianNrs} · {STR.cycleCardPeak}: {cycle.peakNrs}</div>
+                    <div className="mt-1 text-sm text-gray-700">{STR.cycleCardSymptoms}: {cycle.topSymptoms.length ? cycle.topSymptoms.join(', ') : '–'}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">{STR.cycleCardEmpty}</p>
+            )}
+          </Section>
+          <Section title={STR.lagCheckTitle} hint={STR.lagCheckHint}>
+            {lagPairs.length >= 14 ? <LagScatter pairs={lagPairs} /> : <p className="text-sm text-gray-600">{STR.lagCheckTooFew}</p>}
           </Section>
           <Section title="Zusammenhänge" hint={STR.disclaimerCorr}>
             {corr.r===null ? (
@@ -720,7 +1845,16 @@ export default function EndoMiniApp() {
                 <li key={e.id} className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">{e.date}</div>
-                    <div className="text-sm text-gray-600">NRS {e.nrs ?? '-'} · PBAC {e.pbac?.dayScore ?? 0} · {e.pbac?.periodStart ? 'Beginn' : ''} · Symptome {(e.symptoms||[]).map(s=>s.label).join(', ')}</div>
+                    <div className="text-sm text-gray-600">
+                      NRS {e.nrs ?? '-'} · PBAC {e.pbac?.dayScore ?? 0}
+                      {e.pbac?.periodStart ? ' · Beginn' : ''}
+                      {e.pbac?.cupMl ? ` · Cup ${e.pbac.cupMl} ml` : ''}
+                      {e.pbac?.dayScore > 0 && e.pbac.dayScore <= PBAC_RULES.spottingMax ? ` · ${STR.spottingLabel}` : ''}
+                      {(() => {
+                        const syms = (e.symptoms||[]).slice().sort((a,b)=> (b.intensity||0)-(a.intensity||0)).slice(0,3)
+                        return syms.length ? ` · ${STR.cycleCardSymptoms}: ${syms.map(s=>s.label).join(', ')}` : ''
+                      })()}
+                    </div>
                   </div>
                   <button className="text-sm underline" onClick={()=>{
                     if (confirm('Eintrag löschen?')) setEntries(entries.filter(x=>x.id!==e.id))
@@ -766,45 +1900,52 @@ export default function EndoMiniApp() {
 function SelfTests(){
   const [result, setResult] = useState('–')
   useEffect(()=>{
-    try {
-      // clamp tests
-      if (clamp(5,0,10)!==5) throw new Error('clamp basic')
-      if (clamp(-1,0,10)!==0) throw new Error('clamp lower')
-      if (clamp(11,0,10)!==10) throw new Error('clamp upper')
-      // addDaysISO test
-      if (addDaysISO('2025-10-15', -1) !== '2025-10-14') throw new Error('addDaysISO prev')
-      if (addDaysISO('2025-10-13', 1) !== '2025-10-14') throw new Error('addDaysISO next')
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(todayISO())) throw new Error('todayISO format')
-      // ISO date sort test (desc)
-      if ('2025-10-02'.localeCompare('2025-02-11') <= 0) throw new Error('iso sort')
-      // safe sort should not throw when date missing
-      const safeSorted = [{}, {date:'2025-01-01'}].sort((a,b)=> (b?.date ?? '').localeCompare(a?.date ?? ''))
-      if (safeSorted[0]?.date !== '2025-01-01') throw new Error('safe sort')
-      // update detection
-      const upd = [{date:'2025-01-01'}].some(e=>e.date==='2025-01-01')
-      if (!upd) throw new Error('update detect')
-      // PBAC score test
-      const state = { products:[{kind:'pad',fill:'high'},{kind:'tampon',fill:'mid'},{kind:'cup',fill:'low'}], clots:'small', flooding:true }
-      // expected: pad high=5, tampon mid=5, cup low=0, clots small=5, flooding=20 => 35
-      const map = { low:0, mid:1, high:2 }
-      let s = 0
-      state.products.forEach(p=>{ s += PBAC_WEIGHTS[p.kind][map[p.fill]] })
-      if (state.clots==='small') s += 5
-      if (state.flooding) s += 20
-      if (s !== 35) throw new Error('PBAC scoring')
-      // period flags test
-      const e = [
-        { date:'2025-10-01', pbac:{ dayScore:0, periodStart:true } },
-        { date:'2025-10-02', pbac:{ dayScore:5 } },
-        { date:'2025-10-08', pbac:{ dayScore:0 } },
-      ]
-      const { periodSet, startSet } = flagPeriodDays(e)
-      if (!startSet.has('2025-10-01')) throw new Error('period start not flagged')
-      if (!periodSet.has('2025-10-05')) throw new Error('period window not propagated')
-      setResult('✅ Alle Tests OK')
-    } catch (e) {
-      setResult('❌ Tests fehlgeschlagen: ' + (e?.message||'unknown'))
-    }
+    let active = true
+    ;(async () => {
+      try {
+        if (clamp(5,0,10)!==5) throw new Error('clamp basic')
+        if (addDaysISO('2025-10-15', -1) !== '2025-10-14') throw new Error('addDaysISO prev')
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(todayISO())) throw new Error('todayISO format')
+        const pbacTest = computePbacDayScore({ products:[{kind:'pad',fill:'heavy'},{kind:'tampon',fill:'medium'}], clots:'small', floodingEpisodes:2 })
+        if (pbacTest !== 36) throw new Error('PBAC higham mapping')
+        const cupTest = computePbacDayScore({ products:[{kind:'pad',fill:'light'}], clots:'none', floodingEpisodes:0, cupMl:80 })
+        if (cupTest !== 1) throw new Error('PBAC cup exclusion')
+        const entriesSample = [
+          { date:'2025-10-01', pbac:{ dayScore:0 } },
+          { date:'2025-10-02', pbac:{ dayScore:0 } },
+          { date:'2025-10-03', pbac:{ dayScore:4 } },
+          { date:'2025-10-04', pbac:{ dayScore:8 } },
+          { date:'2025-10-05', pbac:{ dayScore:5 } },
+          { date:'2025-10-06', pbac:{ dayScore:0 } },
+          { date:'2025-10-07', pbac:{ dayScore:0 } },
+          { date:'2025-10-08', pbac:{ dayScore:7 } },
+        ]
+        const detected = detectCycles(entriesSample)
+        if (detected.length !== 2) throw new Error('cycle count')
+        if (!detected[0].days.some(d=>d.date==='2025-10-04')) throw new Error('cycle day missing')
+        const flags = buildPeriodFlags(entriesSample)
+        if (!flags.startSet.has('2025-10-04') || !flags.startSet.has('2025-10-08')) throw new Error('start detection')
+        if (flags.periodSet.has('2025-10-03')) throw new Error('spotting misflagged')
+        if (!flags.spottingSet.has('2025-10-03')) throw new Error('spotting missing')
+        const prom = normalizePromis({ sleep4a:[5,4,3,2], fatigue4a:[1,2,3,4] }, '2025-07-06')
+        if (prom.sleep4aRaw !== 14 || prom.fatigue4aRaw !== 10) throw new Error('PROMIS sum')
+        const uroTest = normalizeUro({ urinationFrequency:'4-6', urgency:true, urgencyFrequency:'>=7' })
+        if (uroTest.urinationFrequency !== '4-6' || uroTest.urgencyFrequency !== '>=7') throw new Error('uro normalize')
+        const bowelTest = normalizeBowel({ bowelFrequency:'bad', bristol:8 })
+        if (bowelTest.bowelFrequency !== '0' || bowelTest.bristol !== 7) throw new Error('bowel clamp')
+        const subTest = normalizeSubNrs({ dyspareunia:{ nrs:12, timing:{during:true}, location:{deep:true}, avoidance:true }, dysuria:11, dyschezia:9 })
+        if (subTest.dyspareunia.nrs !== 10 || !subTest.dyspareunia.timing.during || !subTest.dyspareunia.location.deep) throw new Error('subNrs normalize')
+        if (subTest.dysuria !== 10) throw new Error('subNrs clamp')
+        if (window.crypto?.subtle) {
+          const bundleStrong = await encryptBlob({ test: true }, 'pw', 310000)
+          if (bundleStrong.iter !== 310000) throw new Error('KDF strong')
+        }
+        if (active) setResult('✅ Alle Tests OK')
+      } catch (e) {
+        if (active) setResult('❌ Tests fehlgeschlagen: ' + (e?.message||'unknown'))
+      }
+    })()
+    return () => { active = false }
   }, [])
   return <p className="text-sm text-gray-600">{result}</p>
 }
