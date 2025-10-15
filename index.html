@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Endo Mini</title>
+    <style>
+  /* Nur den Report drucken, Rest ausblenden */
+  @media print {
+    body * { visibility: hidden !important; }
+    #print-report, #print-report * { visibility: visible !important; }
+    #print-report { position: static !important; inset: auto !important; }
+    /* Seitenränder & A4 */
+    @page { size: A4; margin: 14mm; }
+    /* Farben im Druck */
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Navigation und Footer sicher ausblenden */
+    nav, header, footer { display: none !important; }
+  }
+</style>
   </head>
   <body class="bg-rose-50">
     <div id="root"></div>
