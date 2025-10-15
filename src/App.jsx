@@ -710,10 +710,13 @@ function PbacMini({ state, setState, disabled = false }) {
   const score = useMemo(() => computePbacDayScore({ products, clots, floodingEpisodes: safeEpisodes }), [products, clots, safeEpisodes])
 
   useEffect(() => {
-    if (state.dayScore !== score || state.floodingEpisodes !== safeEpisodes) {
-      setState({ ...state, dayScore: score, floodingEpisodes: safeEpisodes })
-    }
-  }, [score, safeEpisodes])
+    setState(prev => {
+      const changedScore = prev.dayScore !== score
+      const changedEpisodes = prev.floodingEpisodes !== safeEpisodes
+      if (!changedScore && !changedEpisodes) return prev
+      return { ...prev, dayScore: score, floodingEpisodes: safeEpisodes }
+    })
+  }, [score, safeEpisodes, setState])
 
   const updateProduct = (kind, fill) => {
     const list = products.filter(p => p.kind !== kind)
@@ -1860,7 +1863,7 @@ export default function EndoMiniApp() {
           <div className="px-4 pt-3 flex gap-2">
             <button className="px-3 py-2 rounded-xl border bg-white disabled:opacity-50 disabled:pointer-events-none" onClick={fillLikeYesterday} disabled={!yesterday || !isEditing}>{STR.likeYesterday}</button>
             <button className="px-3 py-2 rounded-xl border bg-white disabled:opacity-50 disabled:pointer-events-none" onClick={markSymptomFree} disabled={!isEditing}>{STR.symptomFree}</button>
-            <button className="px-3 py-2 rounded-xl border bg-white disabled:opacity-50 disabled:pointer-events-none" onClick={()=>{ if (!isEditing) return; setStep(0); setNrs(3); setPbac({ products: [], clots:'none', flooding:false, dayScore:0, periodStart:false }) }}>{STR.quickOnly}</button>
+            <button className="px-3 py-2 rounded-xl border bg-white disabled:opacity-50 disabled:pointer-events-none" onClick={()=>{ if (!isEditing) return; setStep(0); setNrs(3); setPbac({ products: [], clots:'none', floodingEpisodes:0, dayScore:0, periodStart:false }) }}>{STR.quickOnly}</button>
           </div>
           </fieldset>
 
