@@ -3,6 +3,62 @@ import { createPortal } from 'react-dom'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
+const A4_WIDTH_MM = 210
+const A4_HEIGHT_MM = 297
+const MARGIN_MM = 12
+
+async function exportReportPdf(filename = 'arzt_kurzbrief.pdf') {
+  const container = document.getElementById('pdf-render-root')
+  if (!container) throw new Error('PDF-Container fehlt')
+
+  const canvas = await html2canvas(container, {
+    backgroundColor: '#ffffff',
+    scale: window.devicePixelRatio > 2 ? 2 : 2,
+    useCORS: true,
+    logging: false,
+    windowWidth: container.scrollWidth,
+    windowHeight: container.scrollHeight,
+  })
+
+  const imgData = canvas.toDataURL('image/png')
+  const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' })
+
+  const pageWidth = A4_WIDTH_MM - 2 * MARGIN_MM
+  const pageHeight = A4_HEIGHT_MM - 2 * MARGIN_MM
+
+  const imgWidthPx = canvas.width
+  const imgHeightPx = canvas.height
+  const pxPerMm = imgWidthPx / pageWidth
+  const totalHeightMm = imgHeightPx / pxPerMm
+
+  let offsetMm = 0
+  let first = true
+  while (offsetMm < totalHeightMm - 0.1) {
+    if (!first) pdf.addPage()
+    first = false
+
+    const pageCanvas = document.createElement('canvas')
+    pageCanvas.width = imgWidthPx
+    pageCanvas.height = Math.min(
+      imgHeightPx,
+      Math.round((offsetMm + pageHeight) * pxPerMm) - Math.round(offsetMm * pxPerMm)
+    )
+    const ctx = pageCanvas.getContext('2d')
+    ctx.drawImage(
+      canvas,
+      0, Math.round(offsetMm * pxPerMm),
+      imgWidthPx, pageCanvas.height,
+      0, 0,
+      imgWidthPx, pageCanvas.height
+    )
+    const pageImg = pageCanvas.toDataURL('image/png')
+    pdf.addImage(pageImg, 'PNG', MARGIN_MM, MARGIN_MM, pageWidth, pageCanvas.height / pxPerMm)
+    offsetMm += pageHeight
+  }
+
+  pdf.save(filename)
+}
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
@@ -2367,6 +2423,16 @@ export default function EndoMiniApp() {
           />
         </div>
       )}
+      {/* Offscreen-Report für PDF-Export */}
+      <div id="pdf-render-root" style={{ position: 'fixed', left: -99999, top: 0 }}>
+        <ReportView
+          range={reportRange}
+          entries={entries}
+          cycles={cycleSummaries}
+          last7Days={last7Days}
+          last30={last30}
+        />
+      </div>
       </main>
     </ErrorBoundary>
   )
