@@ -1221,7 +1221,7 @@ function BowelInputs({ value, onChange, disabled = false }) {
         </div>
       </div>
       <div>
-        <div className="flex items-center gap-2 text-sm mb-1">
+        <div className="text-sm mb-1 flex items-center gap-2">
           <span>{STR.bristolLabel}</span>
           <Tooltip text={STR.bristolTooltip} />
         </div>
@@ -1991,8 +1991,8 @@ export default function EndoMiniApp() {
           {confirmOverwrite && (
             <div className="fixed inset-0 z-40 bg-black/20 flex items-center justify-center">
               <div className="mx-4 max-w-sm w-full rounded-2xl bg-white p-4 shadow">
-                <div className="font-medium text-rose-900 mb-2">Eintrag überschreiben?</div>
-                <p className="text-sm text-gray-600 mb-4">Für dieses Datum existiert bereits ein Eintrag. Überschreiben?</p>
+                <div className="font-medium text-rose-900 mb-2">Eintrag vom {activeDate} überschreiben?</div>
+                <p className="text-sm text-gray-600 mb-4">Für dieses Datum existiert bereits ein Eintrag. Diese Aktion ersetzt den vorhandenen Eintrag.</p>
                 <div className="flex gap-2">
                   <button className="px-3 py-2 rounded-xl border flex-1" onClick={()=>setConfirmOverwrite(false)}>Abbrechen</button>
                   <button className="px-3 py-2 rounded-xl bg-rose-600 text-white flex-1" onClick={()=>{ setConfirmOverwrite(false); commitSave(); }}>Überschreiben</button>
@@ -2115,7 +2115,9 @@ export default function EndoMiniApp() {
                     </div>
                   </div>
                   <button className="text-sm underline rounded focus-visible:ring-2 focus-visible:ring-rose-400" onClick={()=>{
-                    if (confirm('Eintrag löschen?')) setEntries(entries.filter(x=>x.id!==e.id))
+                    if (confirm(`Eintrag vom ${e.date} löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
+                      setEntries(entries.filter(x=>x.id!==e.id))
+                    }
                   }}>Löschen</button>
                 </li>
               ))}
