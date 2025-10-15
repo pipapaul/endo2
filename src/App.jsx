@@ -442,6 +442,21 @@ async function decryptBlob(bundle, pass) {
   } catch { return [] }
 }
 
+async function persistEntries(entries, settings, pass) {
+  const { encryption, kdfStrong } = settings || {}
+  if (encryption) {
+    if (!pass || pass.length < 4) return 'skip'
+    const iterations = kdfStrong ? 310000 : 120000
+    const bundle = await encryptBlob(entries, pass, iterations)
+    localStorage.setItem(ENC_KEY, JSON.stringify(bundle))
+    localStorage.removeItem(STORAGE_KEY)
+    return 'encrypted'
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+  localStorage.removeItem(ENC_KEY)
+  return 'plain'
+}
+
 // ---------- Period helpers ----------
 function isoDiffDays(a, b) {
   const da = new Date(a)
@@ -1536,6 +1551,9 @@ export default function EndoMiniApp() {
   const [pass, setPass] = useState('')
   const [locked, setLocked] = useState(false)
 
+  const encryption = settings?.encryption
+  const kdfStrong = settings?.kdfStrong
+
   const [entries, setEntries] = useState([])
   const [loaded, setLoaded] = useState(false)
 
@@ -1555,22 +1573,8 @@ export default function EndoMiniApp() {
 
   useEffect(()=>{
     if (!loaded) return
-    if (settings.encryption) {
-      if (!pass || pass.length < 4) {
-        // Keine unsichere Speicherung vornehmen
-        return
-      }
-      (async () => {
-        const iterations = settings.kdfStrong ? 310000 : 120000
-        const bundle = await encryptBlob(entries, pass, iterations)
-        localStorage.setItem(ENC_KEY, JSON.stringify(bundle))
-        localStorage.removeItem(STORAGE_KEY)
-      })()
-    } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
-      localStorage.removeItem(ENC_KEY)
-    }
-  }, [entries, settings.encryption, settings.kdfStrong, loaded, pass])
+    persistEntries(entries, { encryption, kdfStrong }, pass).catch(()=>{})
+  }, [entries, encryption, kdfStrong, loaded, pass])
 
   // Today Wizard state
   const [step, setStep] = useState(0)
@@ -2118,6 +2122,9 @@ function SelfTests(){
         if (pbacTest !== 36) throw new Error('PBAC higham mapping')
         const cupTest = computePbacDayScore({ products:[{kind:'pad',fill:'light'}], clots:'none', floodingEpisodes:0, cupMl:80 })
         if (cupTest !== 1) throw new Error('PBAC cup exclusion')
+        const cupParityBase = computePbacDayScore({ products:[{kind:'tampon',fill:'medium'}], clots:'none', floodingEpisodes:1 })
+        const cupParityWith = computePbacDayScore({ products:[{kind:'tampon',fill:'medium'}], clots:'none', floodingEpisodes:1, cupMl:60 })
+        if (cupParityBase !== cupParityWith) throw new Error('PBAC cup independence')
         const entriesSample = [
           { date:'2025-10-01', pbac:{ dayScore:0 } },
           { date:'2025-10-02', pbac:{ dayScore:0 } },
@@ -2147,6 +2154,18 @@ function SelfTests(){
         if (window.crypto?.subtle) {
           const bundleStrong = await encryptBlob({ test: true }, 'pw', 310000)
           if (bundleStrong.iter !== 310000) throw new Error('KDF strong')
+          const writes = []
+          const originalSetItem = localStorage.setItem.bind(localStorage)
+          const originalRemoveItem = localStorage.removeItem.bind(localStorage)
+          localStorage.setItem = (key, value) => { writes.push({ type:'set', key, value }) }
+          localStorage.removeItem = key => { writes.push({ type:'remove', key }) }
+          try {
+            await persistEntries([{ date: '2025-10-10', pbac: { dayScore: 5 } }], { encryption: true, kdfStrong: false }, '')
+          } finally {
+            localStorage.setItem = originalSetItem
+            localStorage.removeItem = originalRemoveItem
+          }
+          if (writes.length) throw new Error('Encryption without passphrase wrote storage')
         }
         if (active) setResult('✅ Alle Tests OK')
       } catch (e) {
