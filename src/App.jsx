@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
 import { createPortal } from 'react-dom'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
