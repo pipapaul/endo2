@@ -1075,6 +1075,7 @@ function PainInterferenceMini({ value, onChange, disabled = false, date }) {
           <Range value={peg.activity} onChange={v => update('activity', v)} aria={STR.pegActivity} disabled={disabled} />
         </div>
         <div className="text-sm">Summe (PEG-3): <span className="font-semibold">{value.rawSum}</span></div>
+        <p className="text-xs text-gray-500 mt-1">Heute ist Montag: PEG-3 Kurzfragen.</p>
       </div>
     </Section>
   )
@@ -1138,6 +1139,7 @@ function PromisWeeklyMini({ value, onChange, disabled = false, date }) {
       <div className="space-y-4">
         <LikertRow items={PROMIS_SLEEP_ITEMS} values={value.sleep4a} type="sleep" />
         <div className="text-sm">Summe Schlaf: <span className="font-semibold">{value.sleep4aRaw}</span></div>
+        <p className="text-xs text-gray-500 mt-1">Heute ist Sonntag: PROMIS-Kurzfragen.</p>
         <div className="pt-2 border-t border-rose-100">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 text-sm font-medium text-rose-700">
