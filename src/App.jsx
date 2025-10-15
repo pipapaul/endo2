@@ -2256,7 +2256,11 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
   const peakPain = painVals.length ? Math.max(...painVals) : '–'
 
   return (
-    <div id="print-report" className="p-6 text-[12px] leading-snug">
+    <div id="print-report" className="p-6 text-[12px] leading-snug bg-white text-gray-800">
+      <div className="flex items-center justify-between text-sm text-gray-600">
+        <div>EndoLemon</div>
+        <div>{todayISO()}</div>
+      </div>
       <h1 className="text-xl font-semibold">Arzt-Kurzbrief</h1>
       <div className="text-sm text-gray-600 mt-1">
         Zeitraum: {range?.from || '–'} – {range?.to || '–'} · Einträge: {list.length}
@@ -2295,7 +2299,7 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
         <h2 className="text-base font-semibold">Zyklen (Auszug)</h2>
         <div className="mt-1 grid grid-cols-2 gap-3">
           {cycles.slice(0,6).map(c=>(
-            <div key={c.start} className="border rounded-lg p-2">
+            <div key={c.start} className="border border-gray-200 rounded-lg bg-white p-2">
               <div className="text-xs text-gray-600">{c.start} – {c.end}</div>
               <div className="text-sm">PBAC: <b>{c.pbacSum}</b></div>
               <div className="text-sm">Median NRS: <b>{c.medianNrs}</b> · Peak: <b>{c.peakNrs}</b></div>
