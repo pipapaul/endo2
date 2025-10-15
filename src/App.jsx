@@ -1515,6 +1515,10 @@ export default function EndoMiniApp() {
   useEffect(()=>{
     if (!loaded) return
     if (settings.encryption) {
+      if (!pass || pass.length < 4) {
+        // Keine unsichere Speicherung vornehmen
+        return
+      }
       (async () => {
         const iterations = settings.kdfStrong ? 310000 : 120000
         const bundle = await encryptBlob(entries, pass, iterations)
@@ -1818,7 +1822,17 @@ export default function EndoMiniApp() {
               </div>
               <div className="flex items-center justify-between mb-2">
                 <span>Verschlüsselung</span>
-                <input type="checkbox" checked={settings.encryption} onChange={e=>setSettings({...settings, encryption:e.target.checked})} />
+                <input
+                  type="checkbox"
+                  checked={settings.encryption}
+                  onChange={e=>{
+                    if (e.target.checked && (!pass || pass.length < 4)) {
+                      alert('Bitte zuerst eine Passphrase (≥ 4 Zeichen) setzen.')
+                      return
+                    }
+                    setSettings({ ...settings, encryption: e.target.checked })
+                  }}
+                />
               </div>
               <div className="flex items-center justify-between mb-2">
                 <span>{STR.strongerKdf}</span>
@@ -1852,6 +1866,12 @@ export default function EndoMiniApp() {
           />
         )}
       </header>
+
+      {settings.encryption && locked && (
+        <div className="mx-4 mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
+          Daten sind verschlüsselt. Bitte Passphrase eingeben, um zu entsperren.
+        </div>
+      )}
 
       {/* Top slide banner */}
       <TopSlideBanner show={banner.show} text={banner.text} onClose={()=>setBanner(b=>({...b, show:false}))} />
