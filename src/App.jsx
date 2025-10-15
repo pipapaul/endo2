@@ -1928,6 +1928,7 @@ export default function EndoMiniApp() {
                   }}
                 />
               </div>
+              <p className="text-xs text-gray-500 mb-2">{STR.encryptionNote}</p>
               <div className="flex items-center justify-between mb-2">
                 <span>{STR.strongerKdf}</span>
                 <input type="checkbox" checked={!!settings.kdfStrong} onChange={e=>setSettings({...settings, kdfStrong:e.target.checked})} disabled={!settings.encryption} />
@@ -1936,9 +1937,8 @@ export default function EndoMiniApp() {
                 <div className="mt-2">
                   <label className="block mb-1">Passphrase</label>
                   <input type="password" className="w-full border rounded-xl px-3 py-2" placeholder="PIN/Passwort" value={pass} onChange={e=>setPass(e.target.value)} />
-                  <p className="text-xs text-gray-500 mt-1">{STR.encryptionNote}</p>
-                  <p className="text-xs text-gray-500 mt-1">{STR.passphraseWarning}</p>
                   <p className="text-xs text-gray-500 mt-1">{STR.dataLocal}</p>
+                  <p className="text-xs text-gray-500 mt-1">{STR.passphraseWarning}</p>
                 </div>
               )}
               <div className="mt-3 flex items-center justify-between">
@@ -1979,7 +1979,22 @@ export default function EndoMiniApp() {
           <div className="px-4 pt-3 flex gap-2">
             <button className="px-3 py-2 rounded-xl border bg-white disabled:opacity-50 disabled:pointer-events-none" onClick={fillLikeYesterday} disabled={!yesterday || !isEditing}>{STR.likeYesterday}</button>
             <button className="px-3 py-2 rounded-xl border bg-white disabled:opacity-50 disabled:pointer-events-none" onClick={markSymptomFree} disabled={!isEditing}>{STR.symptomFree}</button>
-            <button className="px-3 py-2 rounded-xl border bg-white disabled:opacity-50 disabled:pointer-events-none" onClick={()=>{ if (!isEditing) return; setStep(0); setNrs(3); setPbac({ products: [], clots:'none', floodingEpisodes:0, dayScore:0, periodStart:false }) }}>{STR.quickOnly}</button>
+            <span className="relative group">
+              <button
+                className="px-3 py-2 rounded-xl border bg-white disabled:opacity-50 disabled:pointer-events-none"
+                onClick={()=>{
+                  if (!isEditing) return
+                  setStep(0)
+                  setNrs(3)
+                  setPbac({ products: [], clots:'none', floodingEpisodes:0, dayScore:0, periodStart:false })
+                }}
+              >
+                {STR.quickOnly}
+              </button>
+              <div className="pointer-events-none absolute left-0 top-[110%] hidden w-56 rounded-xl bg-rose-600 px-3 py-2 text-sm text-white shadow group-hover:block">
+                Setzt andere Felder für heute zurück.
+              </div>
+            </span>
           </div>
           </fieldset>
 
