@@ -1444,7 +1444,11 @@ function CalendarHeatmap({ days }) {
       {days.map((d,i)=>{
         const c = d.nrs>=8?'bg-red-600':d.nrs>=5?'bg-red-400':d.nrs>=3?'bg-orange-300':d.nrs>0?'bg-yellow-200':'bg-gray-200'
         return (
-          <div key={i} className={`relative w-[${cell}px] h-[${cell}px] ${c} rounded`}>
+          <div
+            key={i}
+            className={`relative ${c} rounded`}
+            style={{ width: cell, height: cell }}
+          >
             {d.period && <div className="absolute inset-x-0 bottom-0 h-1 bg-rose-400 rounded-b" />}
             {d.periodStart && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-rose-700" />}
             {d.spotting && !d.period && <div className="absolute inset-x-1 bottom-1 h-[2px] bg-rose-400" />}
