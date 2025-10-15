@@ -50,7 +50,9 @@ const STR = {
   pbacTitle: 'Periode & Blutung',
   pbacHint: 'Tippe, wie voll deine Produkte waren. Das hilft in Arztgesprächen (PBAC).',
   bodyQ: 'Wo sitzt der Schmerz?',
+  bodyHint: 'Tippe 1–3 Bereiche. Alternativ Liste für Screenreader.',
   symptomsQ: 'Welche 1–3 Symptome spürst du heute?',
+  symptomsHint: '0 = keins, 10 = sehr stark.',
   medsQ: 'Hast du etwas genommen?',
   sleepQ: 'Wie war dein Schlaf?',
   sleepHint: '0 = sehr schlecht, 10 = sehr gut.',
@@ -75,21 +77,25 @@ const STR = {
   periodStart: 'Periodenbeginn heute',
   periodLegend: 'Markierung zeigt Periodentage / -beginn',
   pbacGuide: 'PBAC nach Higham: Binde/Tampon leicht ≈ 1/5/20 bzw. 1/5/10 Punkte. Klumpen klein ≈ 1 cm (1 Punkt), groß ≈ 2–3 cm (5 Punkte). Flooding = plötzliches Durchsickern, je Episode 5 Punkte. Cups in ml erfassen – gehören nicht zum Score.',
-  pbacCupLabel: 'Menstruationstasse (nicht Teil des PBAC)',
-  pbacCupHint: 'Bitte Menge in ml erfassen. Cups zählen nicht zum Higham-Score.',
+  pbacCupLabel: 'Menstruationstasse',
+  pbacCupHint: 'Menstruationstassen zählen nicht zum Higham-Score. Menge in ml erfassen.',
   pbacFloodingEpisodes: 'Flooding-Episoden',
   pbacFloodingHint: 'Je Episode 5 Punkte (Higham). Sicherheitslimit beachten.',
   pbacClotHint: 'Klumpen klein ≈ 1 cm, groß ≈ 2–3 cm.',
   pbacClotSmall: 'Klumpen klein',
   pbacClotLarge: 'Klumpen groß',
   pbacLegend: 'Legende: Linie Schmerz, Balken PBAC, Punkt Beginn, Schraffur Periode, Linie Spotting.',
+  calendarHint: 'Farbe = Schmerzintensität; Punkt = Beginn, Balken = Periode; Linie = Spotting.',
   spottingLabel: 'Spotting',
   moreDetails: 'Weitere Details',
   lessDetails: 'Details ausblenden',
   subNrsTitle: 'Schmerz-Details',
-  dyspareuniaLabel: 'Dyspareunie (Schmerzen beim Sex, 0–10)',
-  dysuriaLabel: 'Dysurie (Schmerzen beim Wasserlassen, 0–10)',
-  dyscheziaLabel: 'Dyschezie (Schmerzen beim Stuhlgang, 0–10)',
+  dyspareuniaLabel: 'Dyspareunie',
+  dyspareuniaHint: 'Schmerzen beim Sex (0–10).',
+  dysuriaLabel: 'Dysurie',
+  dysuriaHint: 'Schmerzen beim Wasserlassen (0–10).',
+  dyscheziaLabel: 'Dyschezie',
+  dyscheziaHint: 'Schmerzen beim Stuhlgang (0–10).',
   timingDuring: 'während',
   timingAfter: 'danach',
   locationSuperficial: 'oberflächlich',
@@ -100,20 +106,25 @@ const STR = {
   pegPain: 'Durchschnittsschmerz',
   pegEnjoyment: 'Lebensfreude',
   pegActivity: 'Aktivität',
-  promisTitle: 'Schlaf & Müdigkeit (PROMIS 4a Fragebogen)',
+  promisTitle: 'Schlaf & Müdigkeit',
   promisSleepHint: 'PROMIS Sleep Disturbance 4a (letzte 7 Tage). 1 = Nie, 5 = Immer.',
   promisFatigueHint: 'Optional: PROMIS Fatigue 4a (letzte 7 Tage).',
+  promisFatigueLabel: 'Fatigue-Erfassung',
   promisFatigueToggle: 'Fatigue erfassen',
   promisFatigueHide: 'Fatigue ausblenden',
   weekliesInfo: 'Diese Kurzfragen erscheinen nur am jeweiligen Wochentag.',
-  uroTitle: 'Blase & Wasserlassen (Urologie)',
+  uroTitle: 'Blase & Wasserlassen',
+  uroHint: 'Frequenzen als Kategorien, Drang separat.',
   urinationFrequencyLabel: 'Miktionen pro Tag',
-  urgencyLabel: 'Drang vorhanden (plötzlicher Harndrang)',
+  urgencyLabel: 'Drang vorhanden',
+  urgencyHint: 'Plötzlicher Harndrang.',
   urgencyFrequencyLabel: 'Drang-Häufigkeit',
   bowelTitle: 'Darm & Verdauung',
+  bowelHint: 'Frequenzen & Bristol-Form dokumentieren.',
   bowelFrequencyLabel: 'Stuhlgang pro Tag',
   bristolLabel: 'Bristol-Skala',
   therapyTitle: 'Therapien & Nebenwirkungen',
+  therapyHint: 'Strukturiert erfassen, max. drei Nebenwirkungen je Eintrag.',
   therapyAdd: 'Therapie hinzufügen',
   therapyClassLabel: 'Klasse',
   therapyDrugLabel: 'Wirkstoff/Name',
@@ -134,13 +145,21 @@ const STR = {
   cycleCardPeak: 'Peak NRS',
   cycleCardPbac: 'PBAC-Summe',
   cycleCardSymptoms: 'Top-Symptome',
+  cycleCardHint: 'Median/Peak nach Zyklus, PBAC-Summe, häufigste Symptome.',
   cycleCardEmpty: 'Noch keine Blutungszyklen erkannt.',
   strongerKdf: 'Stärkere Verschlüsselung (langsamer)',
   pbacCupNote: 'Cups werden in ml erfasst und zählen nicht zum Higham-Score.',
   cupMlLabel: 'Tassenmenge (ml)',
   medsYes: 'Ja',
   medsNo: 'Nein',
-  medsUnknown: 'Offen lassen'
+  medsUnknown: 'Offen lassen',
+  tipsTitle: 'Tipps zur Nutzung',
+  tipsHint: 'Kurze Hinweise für die Anwendung im Alltag.',
+  tipsItems: [
+    'Lade regelmäßig den PDF-Kurzbrief herunter, um einen Überblick für Termine zu haben.',
+    'Notiere besondere Ereignisse im Notizenfeld deiner Tagesübersicht, damit du sie im Verlauf wiederfindest.',
+    'Nutze die Verschlüsselung mit einer PIN, wenn du dein Gerät mit anderen Personen teilst.',
+  ],
 }
 
 const SYMPTOMS = [
@@ -811,7 +830,7 @@ function PbacMini({ state, setState, disabled = false }) {
       <ProdRow kind="pad" label="Binde" />
       <ProdRow kind="tampon" label="Tampon" />
       <div className="mb-2">
-        <div className="text-sm flex items-center justify-between">
+        <div className="text-sm flex items-center justify-between gap-2">
           <span>{STR.pbacCupLabel}</span>
           <Tooltip text={STR.pbacCupHint} />
         </div>
@@ -827,7 +846,6 @@ function PbacMini({ state, setState, disabled = false }) {
             onChange={e => updateCup(e.target.value)}
             disabled={disabled}
           />
-          <span className="text-xs text-rose-700">{STR.pbacCupHint}</span>
         </div>
       </div>
       <div className="mt-2">
@@ -859,7 +877,7 @@ function PbacMini({ state, setState, disabled = false }) {
           </button>
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <Chip
           active={clots === 'small'}
           onClick={() => setState({ ...state, clots: clots === 'small' ? 'none' : 'small' })}
@@ -874,8 +892,8 @@ function PbacMini({ state, setState, disabled = false }) {
         >
           {STR.pbacClotLarge}
         </Chip>
+        <Tooltip text={STR.pbacClotHint} />
       </div>
-      <div className="mt-1 text-xs text-rose-700">{STR.pbacClotHint}</div>
       <div className="mt-3 text-sm">
         Tages-PBAC (Higham): <span className="font-semibold">{score}</span>
       </div>
@@ -886,7 +904,7 @@ function PbacMini({ state, setState, disabled = false }) {
 function BodyMapSimple({ zones, setZones, disabled=false }) {
   const toggle = (id) => { if (disabled) return; setZones(zones.includes(id) ? zones.filter(z=>z!==id) : [...zones, id]) }
   return (
-    <Section title={STR.bodyQ} hint="Tippe 1–3 Bereiche. Alternativ Liste für Screenreader.">
+    <Section title={STR.bodyQ} hint={STR.bodyHint}>
       <div className="grid grid-cols-2 gap-2">
         {ZONES.map(z => (
           <button key={z.id} onClick={()=>toggle(z.id)} disabled={disabled} className={`p-3 rounded-2xl border text-sm ${zones.includes(z.id) ? 'bg-rose-600 text-white border-rose-600' : ''} disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-rose-400`}>{z.label}</button>
@@ -923,7 +941,7 @@ function SymptomPicker({ selected, setSelected, disabled=false }) {
   }
   const updateInt = (id, v) => { if (disabled) return; setSelected(selected.map(s=>s.id===id?{...s,intensity:v}:s)) }
   return (
-    <Section title={STR.symptomsQ} hint="0 = keins, 10 = sehr stark.">
+    <Section title={STR.symptomsQ} hint={STR.symptomsHint}>
       <div className="mb-2">
         {SYMPTOMS.map(s => <Chip key={s.id} active={selected.some(x=>x.id===s.id)} onClick={()=>toggle(s.id)} disabled={disabled}>{s.label}</Chip>)}
       </div>
@@ -984,7 +1002,12 @@ function PainDetails({ value, onChange, disabled = false }) {
       {open && (
         <div className="bg-white rounded-2xl shadow p-3">
           <div className="mb-4">
-            <div className="text-sm font-medium mb-2">{STR.dyspareuniaLabel}: <b>{dysp.nrs}</b></div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {STR.dyspareuniaLabel}: <b>{dysp.nrs}</b>
+            </span>
+            <Tooltip text={STR.dyspareuniaHint} />
+          </div>
             <Range value={dysp.nrs} onChange={updateDyspNrs} aria={STR.dyspareuniaLabel} disabled={disabled} />
             <div className="mt-2 text-xs text-rose-700">Zeitpunkt</div>
             <div className="flex flex-wrap gap-2 mt-1">
@@ -1001,11 +1024,21 @@ function PainDetails({ value, onChange, disabled = false }) {
             </div>
           </div>
           <div className="mb-4">
-            <div className="text-sm font-medium mb-2">{STR.dysuriaLabel}: <b>{value.dysuria}</b></div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {STR.dysuriaLabel}: <b>{value.dysuria}</b>
+            </span>
+            <Tooltip text={STR.dysuriaHint} />
+          </div>
             <Range value={value.dysuria} onChange={v => updateField('dysuria', v)} aria={STR.dysuriaLabel} disabled={disabled} />
           </div>
           <div>
-            <div className="text-sm font-medium mb-2">{STR.dyscheziaLabel}: <b>{value.dyschezia}</b></div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {STR.dyscheziaLabel}: <b>{value.dyschezia}</b>
+            </span>
+            <Tooltip text={STR.dyscheziaHint} />
+          </div>
             <Range value={value.dyschezia} onChange={v => updateField('dyschezia', v)} aria={STR.dyscheziaLabel} disabled={disabled} />
           </div>
         </div>
@@ -1103,8 +1136,11 @@ function PromisWeeklyMini({ value, onChange, disabled = false, date }) {
         <LikertRow items={PROMIS_SLEEP_ITEMS} values={value.sleep4a} type="sleep" />
         <div className="text-sm">Summe Schlaf: <span className="font-semibold">{value.sleep4aRaw}</span></div>
         <div className="pt-2 border-t border-rose-100">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-rose-700">{STR.promisFatigueHint}</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-rose-700">
+              <span>{STR.promisFatigueLabel}</span>
+              <Tooltip text={STR.promisFatigueHint} />
+            </div>
             <button type="button" className="text-sm text-rose-700 underline" onClick={handleToggleFatigue}>
               {showFatigue ? STR.promisFatigueHide : STR.promisFatigueToggle}
             </button>
@@ -1128,7 +1164,7 @@ function UroInputs({ value, onChange, disabled = false }) {
     onChange({ ...value, [field]: val })
   }
   return (
-    <Section title={STR.uroTitle} hint="Frequenzen als Kategorien, Drang separat.">
+    <Section title={STR.uroTitle} hint={STR.uroHint}>
       <div className="mb-4">
         <div className="text-sm mb-1">{STR.urinationFrequencyLabel}</div>
         <div className="flex flex-wrap gap-2">
@@ -1140,7 +1176,10 @@ function UroInputs({ value, onChange, disabled = false }) {
         </div>
       </div>
       <div className="mb-4">
-        <div className="text-sm mb-1">{STR.urgencyLabel}</div>
+        <div className="flex items-center gap-2 text-sm mb-1">
+          <span>{STR.urgencyLabel}</span>
+          <Tooltip text={STR.urgencyHint} />
+        </div>
         <div className="flex gap-2">
           <Chip active={!value.urgency} onClick={() => setField('urgency', false)} disabled={disabled}>Nein</Chip>
           <Chip active={value.urgency} onClick={() => setField('urgency', true)} disabled={disabled}>Ja</Chip>
@@ -1167,7 +1206,7 @@ function BowelInputs({ value, onChange, disabled = false }) {
     onChange({ ...value, [field]: val })
   }
   return (
-    <Section title={STR.bowelTitle} hint="Frequenzen & Bristol-Form dokumentieren.">
+    <Section title={STR.bowelTitle} hint={STR.bowelHint}>
       <div className="mb-4">
         <div className="text-sm mb-1">{STR.bowelFrequencyLabel}</div>
         <div className="flex flex-wrap gap-2">
@@ -1276,7 +1315,7 @@ function TherapyManager({ list, onChange, disabled = false, tookMeds = null, onT
   }
 
   return (
-    <Section title={STR.therapyTitle} hint="Strukturiert erfassen, max. drei Nebenwirkungen je Eintrag.">
+    <Section title={STR.therapyTitle} hint={STR.therapyHint}>
       <div className="space-y-4">
         <div className="rounded-2xl border border-rose-100 bg-rose-50 p-3">
           <div className="text-sm font-medium text-rose-900">{STR.medsQ}</div>
@@ -1315,7 +1354,7 @@ function TherapyManager({ list, onChange, disabled = false, tookMeds = null, onT
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Chip active={draft.adverse.hasAe} onClick={toggleAe} disabled={disabled}>{STR.therapyHasAe}</Chip>
-            <span className="text-xs text-rose-700">{STR.therapyAeHint}</span>
+            <Tooltip text={STR.therapyAeHint} />
           </div>
           {draft.adverse.hasAe && (
             <div>
@@ -2015,10 +2054,10 @@ export default function EndoMiniApp() {
             />
             <PbacWeekBars days={last7Days} />
           </Section>
-          <Section title="Kalender (30 Tage)" hint="Farbe = Schmerzintensität; Punkt = Beginn, Balken = Periode; Linie = Spotting">
+          <Section title="Kalender (30 Tage)" hint={STR.calendarHint}>
             <CalendarHeatmap days={last30} />
           </Section>
-          <Section title={STR.cycleCardsTitle} hint="Median/Peak nach Zyklus, PBAC-Summe, häufigste Symptome.">
+          <Section title={STR.cycleCardsTitle} hint={STR.cycleCardHint}>
             {cycleSummaries.length ? (
               <div className="space-y-3">
                 {cycleSummaries.map(cycle => (
@@ -2089,8 +2128,12 @@ export default function EndoMiniApp() {
               const a = document.createElement('a'); a.href = url; a.download = `endo_export_${todayISO()}.json`; a.click(); URL.revokeObjectURL(url)
             }}>{STR.jsonExport}</button>
           </Section>
-          <Section title="Diagnose/Tests (dev)">
-            <SelfTests />
+          <Section title={STR.tipsTitle} hint={STR.tipsHint}>
+            <ul className="list-disc space-y-2 pl-5 text-sm text-gray-600">
+              {STR.tipsItems.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
           </Section>
         </div>
       )}
@@ -2106,73 +2149,4 @@ export default function EndoMiniApp() {
       </main>
     </ErrorBoundary>
   )
-}
-
-// ---------- Self tests (inline, dev-only visual) ----------
-function SelfTests(){
-  const [result, setResult] = useState('–')
-  useEffect(()=>{
-    let active = true
-    ;(async () => {
-      try {
-        if (clamp(5,0,10)!==5) throw new Error('clamp basic')
-        if (addDaysISO('2025-10-15', -1) !== '2025-10-14') throw new Error('addDaysISO prev')
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(todayISO())) throw new Error('todayISO format')
-        const pbacTest = computePbacDayScore({ products:[{kind:'pad',fill:'heavy'},{kind:'tampon',fill:'medium'}], clots:'small', floodingEpisodes:2 })
-        if (pbacTest !== 36) throw new Error('PBAC higham mapping')
-        const cupTest = computePbacDayScore({ products:[{kind:'pad',fill:'light'}], clots:'none', floodingEpisodes:0, cupMl:80 })
-        if (cupTest !== 1) throw new Error('PBAC cup exclusion')
-        const cupParityBase = computePbacDayScore({ products:[{kind:'tampon',fill:'medium'}], clots:'none', floodingEpisodes:1 })
-        const cupParityWith = computePbacDayScore({ products:[{kind:'tampon',fill:'medium'}], clots:'none', floodingEpisodes:1, cupMl:60 })
-        if (cupParityBase !== cupParityWith) throw new Error('PBAC cup independence')
-        const entriesSample = [
-          { date:'2025-10-01', pbac:{ dayScore:0 } },
-          { date:'2025-10-02', pbac:{ dayScore:0 } },
-          { date:'2025-10-03', pbac:{ dayScore:4 } },
-          { date:'2025-10-04', pbac:{ dayScore:8 } },
-          { date:'2025-10-05', pbac:{ dayScore:5 } },
-          { date:'2025-10-06', pbac:{ dayScore:0 } },
-          { date:'2025-10-07', pbac:{ dayScore:0 } },
-          { date:'2025-10-08', pbac:{ dayScore:7 } },
-        ]
-        const detected = detectCycles(entriesSample)
-        if (detected.length !== 2) throw new Error('cycle count')
-        if (!detected[0].days.some(d=>d.date==='2025-10-04')) throw new Error('cycle day missing')
-        const flags = buildPeriodFlags(entriesSample)
-        if (!flags.startSet.has('2025-10-04') || !flags.startSet.has('2025-10-08')) throw new Error('start detection')
-        if (flags.periodSet.has('2025-10-03')) throw new Error('spotting misflagged')
-        if (!flags.spottingSet.has('2025-10-03')) throw new Error('spotting missing')
-        const prom = normalizePromis({ sleep4a:[5,4,3,2], fatigue4a:[1,2,3,4] }, '2025-07-06')
-        if (prom.sleep4aRaw !== 14 || prom.fatigue4aRaw !== 10) throw new Error('PROMIS sum')
-        const uroTest = normalizeUro({ urinationFrequency:'4-6', urgency:true, urgencyFrequency:'>=7' })
-        if (uroTest.urinationFrequency !== '4-6' || uroTest.urgencyFrequency !== '>=7') throw new Error('uro normalize')
-        const bowelTest = normalizeBowel({ bowelFrequency:'bad', bristol:8 })
-        if (bowelTest.bowelFrequency !== '0' || bowelTest.bristol !== 7) throw new Error('bowel clamp')
-        const subTest = normalizeSubNrs({ dyspareunia:{ nrs:12, timing:{during:true}, location:{deep:true}, avoidance:true }, dysuria:11, dyschezia:9 })
-        if (subTest.dyspareunia.nrs !== 10 || !subTest.dyspareunia.timing.during || !subTest.dyspareunia.location.deep) throw new Error('subNrs normalize')
-        if (subTest.dysuria !== 10) throw new Error('subNrs clamp')
-        if (window.crypto?.subtle) {
-          const bundleStrong = await encryptBlob({ test: true }, 'pw', 310000)
-          if (bundleStrong.iter !== 310000) throw new Error('KDF strong')
-          const writes = []
-          const originalSetItem = localStorage.setItem.bind(localStorage)
-          const originalRemoveItem = localStorage.removeItem.bind(localStorage)
-          localStorage.setItem = (key, value) => { writes.push({ type:'set', key, value }) }
-          localStorage.removeItem = key => { writes.push({ type:'remove', key }) }
-          try {
-            await persistEntries([{ date: '2025-10-10', pbac: { dayScore: 5 } }], { encryption: true, kdfStrong: false }, '')
-          } finally {
-            localStorage.setItem = originalSetItem
-            localStorage.removeItem = originalRemoveItem
-          }
-          if (writes.length) throw new Error('Encryption without passphrase wrote storage')
-        }
-        if (active) setResult('✅ Alle Tests OK')
-      } catch (e) {
-        if (active) setResult('❌ Tests fehlgeschlagen: ' + (e?.message||'unknown'))
-      }
-    })()
-    return () => { active = false }
-  }, [])
-  return <p className="text-sm text-gray-600">{result}</p>
 }
