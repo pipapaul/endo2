@@ -1060,7 +1060,7 @@ function PainInterferenceMini({ value, onChange, disabled = false, date, titleOv
     onChange({ date, peg3: nextPeg, rawSum })
   }
   return (
-    <Section title={titleOverride ?? STR.painInterferenceTitle} hint={`${STR.pegHint} ${STR.weekliesInfo}`}>
+    <Section title={titleOverride || STR.painInterferenceTitle} hint={`${STR.pegHint} ${STR.weekliesInfo}`}>
       <div className="space-y-4">
         <div>
           <div className="text-sm font-medium mb-1">{STR.pegPain}: <b>{peg.pain}</b></div>
@@ -1135,7 +1135,7 @@ function PromisWeeklyMini({ value, onChange, disabled = false, date, titleOverri
   )
 
   return (
-    <Section title={titleOverride ?? STR.promisTitle} hint={`${STR.promisSleepHint} ${STR.weekliesInfo}`}>
+    <Section title={titleOverride || STR.promisTitle} hint={`${STR.promisSleepHint} ${STR.weekliesInfo}`}>
       <div className="space-y-4">
         <LikertRow items={PROMIS_SLEEP_ITEMS} values={value.sleep4a} type="sleep" />
         <div className="text-sm">Summe Schlaf: <span className="font-semibold">{value.sleep4aRaw}</span></div>
@@ -1154,6 +1154,7 @@ function PromisWeeklyMini({ value, onChange, disabled = false, date, titleOverri
             <div className="space-y-4">
               <LikertRow items={PROMIS_FATIGUE_ITEMS} values={value.fatigue4a} type="fatigue" />
               <div className="text-sm">Summe Fatigue: <span className="font-semibold">{value.fatigue4aRaw}</span></div>
+              <p className="text-xs text-gray-500 mt-1">Skala 1–5: 1=Nie · 2=Selten · 3=Manchmal · 4=Oft · 5=Immer</p>
             </div>
           )}
         </div>
