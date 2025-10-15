@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
+import { createPortal } from 'react-dom'
 
 // ---------- Constants & Helpers ----------
 const STORAGE_KEY = 'endo_mini_v1_data'
@@ -525,26 +526,116 @@ function buildPeriodFlags(entries, rules = PBAC_RULES) {
 function Section({ title, hint, children, right }) {
   return (
     <section className="p-4">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-rose-900">{title}</h2>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-rose-900">{title}</h2>
+          {hint && <Tooltip text={hint} />}
+        </div>
         {right}
       </div>
-      {hint && <p className="text-sm text-rose-700 mb-2">{hint}</p>}
-      <div className="bg-white rounded-2xl shadow p-3">{children}</div>
+      {hint && <p className="sr-only">{hint}</p>}
+      <div className="rounded-2xl bg-white p-3 shadow">{children}</div>
     </section>
   )
 }
 
 function Tooltip({ text }) {
   const [open, setOpen] = useState(false)
+  const [isManual, setIsManual] = useState(false)
+  const [coords, setCoords] = useState({ top: 0, left: 0 })
+  const triggerRef = useRef(null)
+  const tooltipRef = useRef(null)
+  const tooltipId = useId()
+
+  useEffect(() => {
+    if (!open) return
+    const updatePosition = () => {
+      if (!triggerRef.current || !tooltipRef.current) return
+      const triggerRect = triggerRef.current.getBoundingClientRect()
+      const tooltipRect = tooltipRef.current.getBoundingClientRect()
+      let top = triggerRect.top - tooltipRect.height - 8
+      let placement = 'top'
+      if (top < 8) {
+        top = triggerRect.bottom + 8
+        placement = 'bottom'
+      }
+      let left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2
+      const maxLeft = window.innerWidth - tooltipRect.width - 8
+      left = Math.min(Math.max(left, 8), maxLeft)
+      const maxTop = window.innerHeight - tooltipRect.height - 8
+      top = Math.min(Math.max(top, 8), maxTop)
+      if (tooltipRef.current) {
+        tooltipRef.current.dataset.placement = placement
+      }
+      setCoords({ top, left })
+    }
+    updatePosition()
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true)
+      window.removeEventListener('resize', updatePosition)
+    }
+  }, [open, text])
+
+  useEffect(() => {
+    if (!open) return
+    const handleKey = event => {
+      if (event.key === 'Escape') {
+        setOpen(false)
+        setIsManual(false)
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [open])
+
+  useEffect(() => {
+    if (!open) {
+      setIsManual(false)
+    }
+  }, [open])
+
   return (
-    <span className="relative inline-flex ml-2 align-middle">
-      <button aria-label="Info" className="w-5 h-5 rounded-full border text-xs" onClick={() => setOpen(o=>!o)}>i</button>
-      {open && (
-        <div className="absolute z-20 mt-2 w-64 p-2 text-sm bg-rose-600 text-white rounded-xl shadow">
-          {text}
-        </div>
-      )}
+    <span className="relative inline-flex align-middle">
+      <button
+        type="button"
+        ref={triggerRef}
+        className="flex h-5 w-5 items-center justify-center rounded-full border border-rose-200 bg-white text-xs font-semibold text-rose-600 shadow-sm transition-colors hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+        aria-label="Info"
+        aria-describedby={open ? tooltipId : undefined}
+        aria-expanded={open}
+        onClick={() => {
+          setOpen(prev => {
+            const next = !prev
+            setIsManual(next)
+            return next
+          })
+        }}
+        onMouseEnter={() => !isManual && setOpen(true)}
+        onMouseLeave={() => {
+          if (!isManual) setOpen(false)
+        }}
+        onFocus={() => !isManual && setOpen(true)}
+        onBlur={() => {
+          if (!isManual) setOpen(false)
+        }}
+      >
+        i
+      </button>
+      {open &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            id={tooltipId}
+            role="tooltip"
+            className="pointer-events-none fixed z-50 max-w-xs break-words rounded-xl bg-rose-600 px-3 py-2 text-sm leading-snug text-white shadow-xl whitespace-pre-wrap"
+            style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
+          >
+            {text}
+          </div>,
+          document.body
+        )}
     </span>
   )
 }
@@ -590,7 +681,7 @@ function Chip({ active, onClick, children, disabled=false }) {
 
 function NrsSlider({ value, onChange, disabled=false }) {
   return (
-    <Section title={STR.nrsQ} hint={STR.nrsHint} right={<Tooltip text={STR.nrsHint} />}>
+    <Section title={STR.nrsQ} hint={STR.nrsHint}>
       <div className="flex items-center gap-2">
         <span className="text-2xl font-bold w-10 text-center" aria-live="polite">{value}</span>
         <Range value={value} onChange={onChange} aria={STR.nrsQ} disabled={disabled} />
