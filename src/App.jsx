@@ -2368,22 +2368,27 @@ export default function EndoMiniApp() {
             <div className="flex flex-wrap items-end gap-2">
               <label className="text-sm">
                 <span className="block mb-1">{STR.dateLabel} von</span>
-                <input type="date" className="px-2 py-1 rounded-xl border" value={reportRange.from} onChange={e=>setReportRange(r=>({...r, from:e.target.value}))} />
+                <input
+                  type="date"
+                  className="px-2 py-1 rounded-xl border"
+                  value={reportRange.from}
+                  onChange={e=>setReportRange(r=>({ ...r, from: e.target.value }))}
+                />
               </label>
               <label className="text-sm">
                 <span className="block mb-1">{STR.dateLabel} bis</span>
-                <input type="date" className="px-2 py-1 rounded-xl border" value={reportRange.to} onChange={e=>setReportRange(r=>({...r, to:e.target.value}))} />
+                <input
+                  type="date"
+                  className="px-2 py-1 rounded-xl border"
+                  value={reportRange.to}
+                  onChange={e=>setReportRange(r=>({ ...r, to: e.target.value }))}
+                />
               </label>
               <button
                 className="px-4 py-2 rounded-xl bg-rose-600 text-white"
-                onClick={()=>{
-                  setShowReport(true)
-                  setTimeout(()=>window.print(), 50)
-                  const clear = () => { setShowReport(false); window.removeEventListener('afterprint', clear) }
-                  window.addEventListener('afterprint', clear)
-                }}
+                onClick={() => exportReportPdf(`endo_kurzbrief_${todayISO()}.pdf`)}
               >
-                PDF erstellen
+                PDF herunterladen
               </button>
             </div>
           </Section>
