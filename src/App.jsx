@@ -1,6 +1,32 @@
 import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
 import { createPortal } from 'react-dom'
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(err, info) {
+    console.error('UI error:', err, info)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="m-4 rounded-xl border border-rose-200 bg-white p-4 text-sm">
+          Uuups, da ist etwas schiefgelaufen. Bitte neu laden.
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 // ---------- Constants & Helpers ----------
 const STORAGE_KEY = 'endo_mini_v1_data'
 const SETTINGS_KEY = 'endo_mini_v1_settings'
@@ -1809,7 +1835,8 @@ export default function EndoMiniApp() {
   }
 
   return (
-    <main className="min-h-screen bg-rose-50 text-gray-900 pb-24">
+    <ErrorBoundary>
+      <main className="min-h-screen bg-rose-50 text-gray-900 pb-24">
       <header className="sticky top-0 z-30 bg-rose-50/80 backdrop-blur border-b border-rose-100">
         <div className="p-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-rose-900">{STR.appTitle}</h1>
@@ -2054,7 +2081,8 @@ export default function EndoMiniApp() {
           <button className={`py-3 ${tab==='export'?'font-semibold text-rose-700':''}`} onClick={()=>setTab('export')}>{STR.export}</button>
         </div>
       </nav>
-    </main>
+      </main>
+    </ErrorBoundary>
   )
 }
 
