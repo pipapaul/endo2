@@ -1604,6 +1604,8 @@ export default function EndoMiniApp() {
 
   const [entries, setEntries] = useState([])
   const [loaded, setLoaded] = useState(false)
+  const [reportRange, setReportRange] = useState({ from: '', to: '' })
+  const [showReport, setShowReport] = useState(false)
 
   // Load persisted data (possibly encrypted)
   useEffect(()=>{
@@ -1850,7 +1852,7 @@ export default function EndoMiniApp() {
     })
   }, [cycles, entries])
 
-  const reportRange = useMemo(() => {
+  const computedReportRange = useMemo(() => {
     const datedEntries = entries.filter(e => e?.date)
     if (!datedEntries.length) {
       return { from: null, to: null }
@@ -1861,6 +1863,17 @@ export default function EndoMiniApp() {
       to: sorted[sorted.length - 1]?.date || null,
     }
   }, [entries])
+
+  useEffect(() => {
+    if (!computedReportRange.from && !computedReportRange.to) return
+    setReportRange(prev => {
+      if (prev.from || prev.to) return prev
+      return {
+        from: computedReportRange.from || '',
+        to: computedReportRange.to || '',
+      }
+    })
+  }, [computedReportRange])
 
   const lagPairs = useMemo(() => {
     const map = new Map(entries.map(e => [e.date, e]))
@@ -2171,7 +2184,27 @@ export default function EndoMiniApp() {
       {tab==='export' && (
         <div>
           <Section title={STR.pdf1}>
-            <button className="px-4 py-2 rounded-xl border" onClick={()=>window.print()}>{STR.pdf1}</button>
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="text-sm">
+                <span className="block mb-1">{STR.dateLabel} von</span>
+                <input type="date" className="px-2 py-1 rounded-xl border" value={reportRange.from} onChange={e=>setReportRange(r=>({...r, from:e.target.value}))} />
+              </label>
+              <label className="text-sm">
+                <span className="block mb-1">{STR.dateLabel} bis</span>
+                <input type="date" className="px-2 py-1 rounded-xl border" value={reportRange.to} onChange={e=>setReportRange(r=>({...r, to:e.target.value}))} />
+              </label>
+              <button
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white"
+                onClick={()=>{
+                  setShowReport(true)
+                  setTimeout(()=>window.print(), 50)
+                  const clear = () => { setShowReport(false); window.removeEventListener('afterprint', clear) }
+                  window.addEventListener('afterprint', clear)
+                }}
+              >
+                PDF erstellen
+              </button>
+            </div>
           </Section>
           <Section title="JSON">
             <button className="px-4 py-2 rounded-xl border" onClick={()=>{
@@ -2198,16 +2231,18 @@ export default function EndoMiniApp() {
           <button className={`py-3 ${tab==='export'?'font-semibold text-rose-700':''}`} onClick={()=>setTab('export')}>{STR.export}</button>
         </div>
       </nav>
+      {showReport && (
+        <div className="fixed inset-0 z-[60] bg-white overflow-auto">
+          <ReportView
+            range={reportRange}
+            entries={entries}
+            cycles={cycleSummaries}
+            last7Days={last7Days}
+            last30={last30}
+          />
+        </div>
+      )}
       </main>
-      <div className="hidden print:block">
-        <ReportView
-          range={reportRange}
-          entries={entries}
-          cycles={cycleSummaries}
-          last7Days={last7Days}
-          last30={last30}
-        />
-      </div>
     </ErrorBoundary>
   )
 }
