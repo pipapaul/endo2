@@ -679,7 +679,7 @@ function Stepper({ step, total }) {
 function TopSlideBanner({ show, text, onClose }){
   return (
     <div className={`fixed top-0 inset-x-0 z-50 transform transition-transform duration-300 ${show? 'translate-y-0':'-translate-y-full'}`}>
-      <div className="mx-auto max-w-md mt-2 px-4 py-2 rounded-xl bg-rose-600 text-white shadow text-center">
+      <div className="mx-auto max-w-md mt-2 px-4 py-2 rounded-xl bg-rose-600 text-white shadow text-center" aria-live="polite">
         {text}
       </div>
     </div>
@@ -824,7 +824,7 @@ function PbacMini({ state, setState, disabled = false }) {
           <button
             type="button"
             aria-label="Flooding verringern"
-            className="w-8 h-8 rounded-full border bg-white disabled:opacity-50"
+            className="w-8 h-8 rounded-full border bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-50"
             onClick={() => adjustEpisodes(-1)}
             disabled={disabled || safeEpisodes <= 0}
           >
@@ -836,7 +836,7 @@ function PbacMini({ state, setState, disabled = false }) {
           <button
             type="button"
             aria-label="Flooding erhöhen"
-            className="w-8 h-8 rounded-full border bg-white disabled:opacity-50"
+            className="w-8 h-8 rounded-full border bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-50"
             onClick={() => adjustEpisodes(1)}
             disabled={disabled || safeEpisodes >= PBAC_RULES.maxFloodingEpisodesPerDay}
           >
@@ -877,6 +877,21 @@ function BodyMapSimple({ zones, setZones, disabled=false }) {
           <button key={z.id} onClick={()=>toggle(z.id)} disabled={disabled} className={`p-3 rounded-2xl border text-sm ${zones.includes(z.id) ? 'bg-rose-600 text-white border-rose-600' : ''} disabled:opacity-50 disabled:pointer-events-none`}>{z.label}</button>
         ))}
       </div>
+      <ul className="sr-only">
+        {ZONES.map(z => (
+          <li key={z.id}>
+            <label>
+              <input
+                type="checkbox"
+                checked={zones.includes(z.id)}
+                onChange={() => toggle(z.id)}
+                disabled={disabled}
+              />
+              {' '}{z.label}
+            </label>
+          </li>
+        ))}
+      </ul>
     </Section>
   )
 }
@@ -1293,7 +1308,7 @@ function TherapyManager({ list, onChange, disabled = false, tookMeds = null, onT
                 {draft.adverse.top.map(tag => (
                   <span key={tag} className="px-3 py-1 rounded-full bg-rose-100 text-sm flex items-center gap-2">
                     {tag}
-                    <button type="button" className="text-xs" onClick={() => removeTag(tag)} disabled={disabled}>×</button>
+                    <button type="button" className="text-xs rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" onClick={() => removeTag(tag)} disabled={disabled}>×</button>
                   </span>
                 ))}
               </div>
@@ -1493,7 +1508,7 @@ function DateNav({ activeDate, setActiveDate, hasEntry, onPrev, onNext, onToday,
   return (
     <div className="px-4 pt-2 pb-1 bg-rose-50 border-b border-rose-100">
       <div className="flex items-center justify-between">
-        <button aria-label="Vorheriger Tag" className="w-9 h-9 rounded-full bg-rose-100 text-rose-700" onClick={onPrev}>‹</button>
+        <button aria-label="Vorheriger Tag" className="w-9 h-9 rounded-full bg-rose-100 text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" onClick={onPrev}>‹</button>
         <div className="text-center">
           <div className="text-sm text-rose-800 font-medium">{STR.dateLabel}</div>
           <div className="flex items-center gap-2 justify-center">
@@ -1504,7 +1519,7 @@ function DateNav({ activeDate, setActiveDate, hasEntry, onPrev, onNext, onToday,
             )}
           </div>
         </div>
-        <button aria-label="Nächster Tag" className="w-9 h-9 rounded-full bg-rose-100 text-rose-700" onClick={onNext}>›</button>
+        <button aria-label="Nächster Tag" className="w-9 h-9 rounded-full bg-rose-100 text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" onClick={onNext}>›</button>
       </div>
       <div className="mt-2 flex justify-center">
         <button className="text-xs underline text-rose-700" onClick={onToday}>{STR.todayJump}</button>
@@ -1874,7 +1889,7 @@ export default function EndoMiniApp() {
               )}
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-red-600">{STR.clearAll}</span>
-                <button className="px-3 py-2 rounded-xl border" onClick={()=>{ if (confirm('Wirklich alles löschen?')) { localStorage.clear(); location.reload() } }}>Löschen</button>
+                <button className="px-3 py-2 rounded-xl border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" onClick={()=>{ if (confirm('Wirklich alles löschen?')) { localStorage.clear(); location.reload() } }}>Löschen</button>
               </div>
             </div>
           </details>
@@ -2045,7 +2060,7 @@ export default function EndoMiniApp() {
                       })()}
                     </div>
                   </div>
-                  <button className="text-sm underline" onClick={()=>{
+                  <button className="text-sm underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" onClick={()=>{
                     if (confirm('Eintrag löschen?')) setEntries(entries.filter(x=>x.id!==e.id))
                   }}>Löschen</button>
                 </li>
