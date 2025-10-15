@@ -1506,6 +1506,99 @@ function PbacWeekBars({ days = [] }) {
   )
 }
 
+function ReportView({ range, entries, cycles, last7Days, last30 }) {
+  const within = e => (!range?.from || e.date >= range.from) && (!range?.to || e.date <= range.to)
+  const list = entries.filter(within).slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''))
+
+  const pbacSum = list.reduce((s,e)=> s + Number(e?.pbac?.dayScore||0), 0)
+  const painVals = list.map(e => typeof e.nrs==='number'? e.nrs : null).filter(v=>v!==null)
+  const meanPain = painVals.length ? (painVals.reduce((a,b)=>a+b,0)/painVals.length).toFixed(1) : '–'
+  const peakPain = painVals.length ? Math.max(...painVals) : '–'
+
+  return (
+    <div id="print-report" className="p-6 text-[12px] leading-snug bg-white text-gray-900">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Arzt-Kurzbrief</h1>
+        <div className="text-sm text-gray-600">{todayISO()}</div>
+      </div>
+      <div className="text-sm text-gray-600 mt-1">
+        Zeitraum: {range?.from || '–'} – {range?.to || '–'} · Einträge: {list.length}
+      </div>
+
+      <section className="mt-4">
+        <h2 className="text-base font-semibold">Zusammenfassung</h2>
+        <ul className="mt-1 list-disc pl-5">
+          <li>Durchschnittsschmerz (NRS): <b>{meanPain}</b> · Peak: <b>{peakPain}</b></li>
+          <li>PBAC-Summe (Zeitraum): <b>{pbacSum}</b></li>
+          <li>Therapie-Tage (Einnahme „Ja“): <b>{list.filter(e=>e.tookMeds===true).length}</b></li>
+        </ul>
+      </section>
+
+      <section className="mt-4">
+        <h2 className="text-base font-semibold">7-Tage Verlauf (Schmerz & PBAC)</h2>
+        <div className="mt-2">
+          <Sparkline
+            data={last7Days.map(d=>d.nrs)}
+            mask={last7Days.map(d=>d.period)}
+            spottingMask={last7Days.map(d=>d.spotting)}
+            starts={last7Days.map(d=>d.start)}
+          />
+          <PbacWeekBars days={last7Days} />
+        </div>
+      </section>
+
+      <section className="mt-4">
+        <h2 className="text-base font-semibold">Kalender (30 Tage)</h2>
+        <div className="mt-2">
+          <CalendarHeatmap days={last30} />
+        </div>
+      </section>
+
+      <section className="mt-4">
+        <h2 className="text-base font-semibold">Zyklen (Auszug)</h2>
+        <div className="mt-1 grid grid-cols-2 gap-3">
+          {cycles.slice(0,6).map(c=>(
+            <div key={c.start} className="border rounded-lg p-2">
+              <div className="text-xs text-gray-600">{c.start} – {c.end}</div>
+              <div className="text-sm">PBAC: <b>{c.pbacSum}</b></div>
+              <div className="text-sm">Median NRS: <b>{c.medianNrs}</b> · Peak: <b>{c.peakNrs}</b></div>
+              <div className="text-xs text-gray-700">Top-Symptome: {c.topSymptoms?.length? c.topSymptoms.join(', '): '–'}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-4">
+        <h2 className="text-base font-semibold">Letzte Einträge</h2>
+        <table className="mt-2 w-full border-collapse">
+          <thead>
+            <tr className="text-left border-b">
+              <th className="py-1 pr-2">Datum</th>
+              <th className="py-1 pr-2">NRS</th>
+              <th className="py-1 pr-2">PBAC</th>
+              <th className="py-1 pr-2">Symptome</th>
+              <th className="py-1">Meds</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.slice(-20).map(e=>(
+              <tr key={e.id} className="border-b">
+                <td className="py-1 pr-2">{e.date}</td>
+                <td className="py-1 pr-2">{e.nrs ?? '–'}</td>
+                <td className="py-1 pr-2">{e.pbac?.dayScore ?? 0}{e.pbac?.periodStart?' (Beginn)':''}</td>
+                <td className="py-1 pr-2">{(e.symptoms||[]).slice().sort((a,b)=>(b.intensity||0)-(a.intensity||0)).slice(0,3).map(s=>s.label).join(', ') || '–'}</td>
+                <td className="py-1">{typeof e.tookMeds==='boolean'?(e.tookMeds?'Ja':'Nein'):'–'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <p className="mt-4 text-[11px] text-gray-600">PBAC = Higham-Score; Korrelationen sind keine Kausalität.</p>
+    </div>
+  )
+}
+
 function LagScatter({ pairs = [] }) {
   const width = 280
   const height = 180
@@ -1594,6 +1687,7 @@ function DateNav({ activeDate, setActiveDate, hasEntry, onPrev, onNext, onToday,
 }
 
 // ---------- Main App ----------
+
 export default function EndoMiniApp() {
   const [tab, setTab] = useState('today') // today|trends|entries|export
   const [activeDate, setActiveDate] = useState(todayISO())
@@ -2275,100 +2369,5 @@ export default function EndoMiniApp() {
       )}
       </main>
     </ErrorBoundary>
-  )
-}
-
-function ReportView({ range, entries, cycles, last7Days, last30 }) {
-  const within = e => (!range?.from || e.date >= range.from) && (!range?.to || e.date <= range.to)
-  const list = entries.filter(within).slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''))
-  const pbacSum = list.reduce((s,e)=> s + Number(e?.pbac?.dayScore||0), 0)
-  const painVals = list.map(e => typeof e.nrs==='number'? e.nrs : null).filter(v=>v!==null)
-  const meanPain = painVals.length ? (painVals.reduce((a,b)=>a+b,0)/painVals.length).toFixed(1) : '–'
-  const peakPain = painVals.length ? Math.max(...painVals) : '–'
-
-  return (
-    <div id="print-report" className="p-6 text-[12px] leading-snug bg-white text-gray-800">
-      <div className="flex items-center justify-between text-sm text-gray-600">
-        <div>EndoLemon</div>
-        <div>{todayISO()}</div>
-      </div>
-      <h1 className="text-xl font-semibold">Arzt-Kurzbrief</h1>
-      <div className="text-sm text-gray-600 mt-1">
-        Zeitraum: {range?.from || '–'} – {range?.to || '–'} · Einträge: {list.length}
-      </div>
-
-      <section className="mt-4">
-        <h2 className="text-base font-semibold">Zusammenfassung</h2>
-        <ul className="mt-1 list-disc pl-5">
-          <li>Durchschnittsschmerz (NRS): <b>{meanPain}</b> · Peak: <b>{peakPain}</b></li>
-          <li>PBAC-Summe (Zeitraum): <b>{pbacSum}</b></li>
-          <li>Therapie-Tage (mit Einnahme „Ja“): <b>{list.filter(e=>e.tookMeds===true).length}</b></li>
-        </ul>
-      </section>
-
-      <section className="mt-4">
-        <h2 className="text-base font-semibold">7-Tage Verlauf (Schmerz & PBAC)</h2>
-        <div className="mt-2">
-          <Sparkline
-            data={last7Days.map(d=>d.nrs)}
-            mask={last7Days.map(d=>d.period)}
-            spottingMask={last7Days.map(d=>d.spotting)}
-            starts={last7Days.map(d=>d.start)}
-          />
-          <PbacWeekBars days={last7Days} />
-        </div>
-      </section>
-
-      <section className="mt-4">
-        <h2 className="text-base font-semibold">Kalender (30 Tage)</h2>
-        <div className="mt-2">
-          <CalendarHeatmap days={last30} />
-        </div>
-      </section>
-
-      <section className="mt-4">
-        <h2 className="text-base font-semibold">Zyklen (Auszug)</h2>
-        <div className="mt-1 grid grid-cols-2 gap-3">
-          {cycles.slice(0,6).map(c=>(
-            <div key={c.start} className="border border-gray-200 rounded-lg bg-white p-2">
-              <div className="text-xs text-gray-600">{c.start} – {c.end}</div>
-              <div className="text-sm">PBAC: <b>{c.pbacSum}</b></div>
-              <div className="text-sm">Median NRS: <b>{c.medianNrs}</b> · Peak: <b>{c.peakNrs}</b></div>
-              <div className="text-xs text-gray-700">Top-Symptome: {c.topSymptoms?.length? c.topSymptoms.join(', '): '–'}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-4">
-        <h2 className="text-base font-semibold">Letzte Einträge</h2>
-        <table className="mt-2 w-full border-collapse">
-          <thead>
-            <tr className="text-left border-b">
-              <th className="py-1 pr-2">Datum</th>
-              <th className="py-1 pr-2">NRS</th>
-              <th className="py-1 pr-2">PBAC</th>
-              <th className="py-1 pr-2">Symptome</th>
-              <th className="py-1">Meds</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.slice(-20).map(e=>(
-              <tr key={e.id} className="border-b">
-                <td className="py-1 pr-2">{e.date}</td>
-                <td className="py-1 pr-2">{e.nrs ?? '–'}</td>
-                <td className="py-1 pr-2">{e.pbac?.dayScore ?? 0}{e.pbac?.periodStart?' (Beginn)':''}</td>
-                <td className="py-1 pr-2">{(e.symptoms||[]).slice().sort((a,b)=>(b.intensity||0)-(a.intensity||0)).slice(0,3).map(s=>s.label).join(', ') || '–'}</td>
-                <td className="py-1">{typeof e.tookMeds==='boolean'?(e.tookMeds?'Ja':'Nein'):'–'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      <p className="mt-4 text-[11px] text-gray-600">
-        Hinweis: PBAC = Higham-Score; Korrelationen sind keine Kausalität.
-      </p>
-    </div>
   )
 }
