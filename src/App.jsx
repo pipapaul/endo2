@@ -832,12 +832,33 @@ function Chip({ active, onClick, children, disabled=false }) {
   )
 }
 
-function NrsSlider({ value, onChange, disabled=false }) {
+function NrsSlider({ value, onChange, disabled=false, absentReason, onToggleAbsent, onFirstActivate }) {
+  const displayValue = Number.isFinite(value) ? value : '–'
+  const toggleLabel = absentReason ? 'Erfassung aktivieren' : 'Nicht erfassen'
   return (
-    <Section title={STR.nrsQ} hint={STR.nrsHint}>
+    <Section
+      title={STR.nrsQ}
+      hint={STR.nrsHint}
+      right={(
+        <button
+          type="button"
+          className="text-sm text-rose-700 underline disabled:opacity-50 disabled:pointer-events-none"
+          onClick={onToggleAbsent}
+          disabled={disabled}
+        >
+          {toggleLabel}
+        </button>
+      )}
+    >
       <div className="flex items-center gap-2">
-        <span className="text-2xl font-bold w-10 text-center" aria-live="polite">{value}</span>
-        <Range value={value} onChange={onChange} aria={STR.nrsQ} disabled={disabled} />
+        <span className="text-2xl font-bold w-10 text-center" aria-live="polite">{displayValue}</span>
+        <Range
+          value={value}
+          onChange={onChange}
+          aria={STR.nrsQ}
+          disabled={disabled}
+          onFirstActivate={onFirstActivate}
+        />
       </div>
     </Section>
   )
@@ -1048,10 +1069,31 @@ function SymptomPicker({ selected, setSelected, disabled=false }) {
   )
 }
 
-function SleepScale({ value, onChange, disabled=false }) {
+function SleepScale({ value, onChange, disabled=false, absentReason, onToggleAbsent, onFirstActivate }) {
+  const toggleLabel = absentReason ? 'Erfassung aktivieren' : 'Nicht erfassen'
   return (
-    <Section title={STR.sleepQ} hint={STR.sleepHint}>
-      <Range value={value} onChange={onChange} aria={STR.sleepQ} labels={["0 sehr schlecht","3 schlecht","5 mittel","7 gut","10 sehr gut"]} disabled={disabled} />
+    <Section
+      title={STR.sleepQ}
+      hint={STR.sleepHint}
+      right={(
+        <button
+          type="button"
+          className="text-sm text-rose-700 underline disabled:opacity-50 disabled:pointer-events-none"
+          onClick={onToggleAbsent}
+          disabled={disabled}
+        >
+          {toggleLabel}
+        </button>
+      )}
+    >
+      <Range
+        value={value}
+        onChange={onChange}
+        aria={STR.sleepQ}
+        labels={["0 sehr schlecht","3 schlecht","5 mittel","7 gut","10 sehr gut"]}
+        disabled={disabled}
+        onFirstActivate={onFirstActivate}
+      />
     </Section>
   )
 }
@@ -1819,13 +1861,15 @@ export default function EndoMiniApp() {
     return entries.find(e=>e.date===iso)
   }, [entries, activeDate])
 
-  const [nrs, setNrs] = useState(3)
+  const [nrs, setNrs] = useState(null)
+  const [nrsAbsent, setNrsAbsent] = useState(ABSENT.NOT_ASKED)
   const [pbac, setPbac] = useState(() => ({ ...DEFAULT_PBAC }))
   const [zones, setZones] = useState([])
   const [symptoms, setSymptoms] = useState([])
   const [therapy, setTherapy] = useState([])
   const [tookMeds, setTookMeds] = useState(null)
-  const [sleep, setSleep] = useState(5)
+  const [sleep, setSleep] = useState(null)
+  const [sleepAbsent, setSleepAbsent] = useState(ABSENT.NOT_ASKED)
   const [subNrs, setSubNrs] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
   const [uro, setUro] = useState(() => ({ ...DEFAULT_URO }))
   const [bowel, setBowel] = useState(() => ({ ...DEFAULT_BOWEL }))
@@ -1835,6 +1879,34 @@ export default function EndoMiniApp() {
   const [isEditing, setIsEditing] = useState(true)
   const [banner, setBanner] = useState({ show:false, text:'' })
   const [confirmOverwrite, setConfirmOverwrite] = useState(false)
+
+  const handleNrsChange = value => {
+    setNrs(value)
+    setNrsAbsent(null)
+  }
+
+  const handleSleepChange = value => {
+    setSleep(value)
+    setSleepAbsent(null)
+  }
+
+  const toggleNrsCapture = () => {
+    if (nrsAbsent) {
+      setNrsAbsent(null)
+      return
+    }
+    setNrs(null)
+    setNrsAbsent(ABSENT.NOT_ASKED)
+  }
+
+  const toggleSleepCapture = () => {
+    if (sleepAbsent) {
+      setSleepAbsent(null)
+      return
+    }
+    setSleep(null)
+    setSleepAbsent(ABSENT.NOT_ASKED)
+  }
 
   // section refs for progressive reveal scrolling
   const sectionRefs = useMemo(
@@ -1849,13 +1921,17 @@ export default function EndoMiniApp() {
     const isPegDay = weekday === 1
     const isPromisDay = weekday === 0
     if (e) {
-      setNrs(e.nrs ?? 3)
+      const nrsValue = toNull(e.nrs)
+      setNrs(nrsValue)
+      setNrsAbsent(e.nrs_absent_reason ?? (nrsValue == null ? ABSENT.UNKNOWN : null))
       setPbac(normalizePbac(e.pbac))
       setZones(e.zones ?? [])
       setSymptoms(e.symptoms ?? [])
       setTherapy(normalizeTherapy(e.therapy, e.medication))
       setTookMeds(deriveTookMeds(e))
-      setSleep(e.sleep ?? 5)
+      const sleepValue = toNull(e.sleep)
+      setSleep(sleepValue)
+      setSleepAbsent(e.sleep_absent_reason ?? (sleepValue == null ? ABSENT.UNKNOWN : null))
       setSubNrs(normalizeSubNrs(e.subNrs))
       setUro(normalizeUro(e.uro))
       setBowel(normalizeBowel(e.bowel))
@@ -1865,13 +1941,15 @@ export default function EndoMiniApp() {
       setPromis(isPromisDay ? (normalizedPromis || DEFAULT_PROMIS(activeDate)) : normalizedPromis)
       setIsEditing(false) // vorhandener Tag: zunächst gesperrt
     } else {
-      setNrs(3)
+      setNrs(null)
+      setNrsAbsent(ABSENT.NOT_ASKED)
       setPbac(normalizePbac(null))
       setZones([])
       setSymptoms([])
       setTherapy([])
       setTookMeds(null)
-      setSleep(5)
+      setSleep(null)
+      setSleepAbsent(ABSENT.NOT_ASKED)
       setSubNrs(JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
       setUro({ ...DEFAULT_URO })
       setBowel({ ...DEFAULT_BOWEL })
@@ -1887,11 +1965,15 @@ export default function EndoMiniApp() {
 
   function fillLikeYesterday() {
     if (!yesterday) return
-    setNrs(yesterday.nrs ?? 3)
+    const yNrs = toNull(yesterday.nrs)
+    setNrs(yNrs)
+    setNrsAbsent(yesterday.nrs_absent_reason ?? (yNrs == null ? ABSENT.UNKNOWN : null))
     setPbac(normalizePbac(yesterday.pbac))
     setZones(yesterday.zones ?? [])
     setSymptoms(yesterday.symptoms ?? [])
-    setSleep(yesterday.sleep ?? 5)
+    const ySleep = toNull(yesterday.sleep)
+    setSleep(ySleep)
+    setSleepAbsent(yesterday.sleep_absent_reason ?? (ySleep == null ? ABSENT.UNKNOWN : null))
     setTherapy(normalizeTherapy(yesterday.therapy, yesterday.medication))
     setTookMeds(deriveTookMeds(yesterday))
     setSubNrs(normalizeSubNrs(yesterday.subNrs))
@@ -1907,12 +1989,14 @@ export default function EndoMiniApp() {
   function markSymptomFree(){
     const weekday = isoWeekday(activeDate)
     setNrs(0)
+    setNrsAbsent(null)
     setPbac(normalizePbac(null))
     setZones([])
     setSymptoms([])
     setTherapy([])
     setTookMeds(null)
     setSleep(7)
+    setSleepAbsent(null)
     setSubNrs(JSON.parse(JSON.stringify(DEFAULT_SUB_NRS)))
     setUro({ ...DEFAULT_URO })
     setBowel({ ...DEFAULT_BOWEL })
@@ -1952,12 +2036,14 @@ export default function EndoMiniApp() {
         date: d,
         mode: settings.quickMode ? 'quick' : 'detail',
         nrs,
+        nrs_absent_reason: nrsAbsent,
         pbac: pbacSave,
         zones,
         symptoms,
         therapy: therapySave,
         tookMeds: typeof tookMeds === 'boolean' ? tookMeds : null,
         sleep,
+        sleep_absent_reason: sleepAbsent,
         subNrs: subNrsSave,
         uro: uroSave,
         bowel: bowelSave,
@@ -2226,7 +2312,8 @@ export default function EndoMiniApp() {
                 onClick={()=>{
                   if (!isEditing) return
                   setStep(0)
-                  setNrs(3)
+                  setNrs(null)
+                  setNrsAbsent(ABSENT.NOT_ASKED)
                   setPbac({ products: [], clots:'none', floodingEpisodes:0, dayScore:0, periodStart:false })
                 }}
               >
@@ -2259,7 +2346,16 @@ export default function EndoMiniApp() {
 
           {/* Progressive reveal: show sections up to current step */}
           <fieldset disabled={!isEditing}>
-          <div ref={sectionRefs[0]}>{step>=0 && <NrsSlider value={nrs} onChange={setNrs} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[0]}>{step>=0 && (
+            <NrsSlider
+              value={nrs}
+              onChange={handleNrsChange}
+              disabled={!isEditing}
+              absentReason={nrsAbsent}
+              onToggleAbsent={toggleNrsCapture}
+              onFirstActivate={()=>setNrsAbsent(null)}
+            />
+          )}</div>
           <div ref={sectionRefs[1]}>{step>=1 && <PainDetails value={subNrs} onChange={setSubNrs} disabled={!isEditing} />}</div>
           <div ref={sectionRefs[2]}>{step>=2 && <PbacMini state={pbac} setState={setPbac} disabled={!isEditing} />}</div>
           <div ref={sectionRefs[3]}>{step>=3 && <BodyMapSimple zones={zones} setZones={setZones} disabled={!isEditing} />}</div>
@@ -2279,7 +2375,16 @@ export default function EndoMiniApp() {
               onTookMedsChange={setTookMeds}
             />
           )}</div>
-          <div ref={sectionRefs[7]}>{step>=7 && <SleepScale value={sleep} onChange={setSleep} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[7]}>{step>=7 && (
+            <SleepScale
+              value={sleep}
+              onChange={handleSleepChange}
+              disabled={!isEditing}
+              absentReason={sleepAbsent}
+              onToggleAbsent={toggleSleepCapture}
+              onFirstActivate={()=>setSleepAbsent(null)}
+            />
+          )}</div>
           <div ref={sectionRefs[8]}>{step>=8 && (
             <>
               {isoWeekday(activeDate) === 1 && painInterference && (
