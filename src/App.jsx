@@ -263,6 +263,7 @@ const ZONES = [
 const FILL_ALIASES = { low: 'light', mid: 'medium', high: 'heavy', light: 'light', medium: 'medium', heavy: 'heavy' }
 
 const FREQUENCY_OPTIONS = [
+  { id: 'unknown', label: 'Unbekannt' },
   { id: '0', label: '0 (keine Miktion)' },
   { id: '1-3', label: '1–3' },
   { id: '4-6', label: '4–6' },
@@ -323,8 +324,8 @@ const DEFAULT_PROMIS = date => ({
   fatigue4aRaw: 0,
 })
 
-const DEFAULT_URO = { urinationFrequency: '0', urgency: false, urgencyFrequency: '0' }
-const DEFAULT_BOWEL = { bowelFrequency: '0', bristol: 0 }
+const DEFAULT_URO = { urinationFrequency: 'unknown', urgency: false, urgencyFrequency: 'unknown' }
+const DEFAULT_BOWEL = { bowelFrequency: 'unknown', bristol: null }
 
 function computePbacDayScore(pbac) {
   if (!pbac || pbac.absent_reason) return null
@@ -460,18 +461,27 @@ function normalizeUro(raw) {
   const base = { ...DEFAULT_URO }
   if (!raw) return base
   return {
-    urinationFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.urinationFrequency) ? raw.urinationFrequency : '0',
+    ...base,
+    urinationFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.urinationFrequency)
+      ? raw.urinationFrequency
+      : base.urinationFrequency,
     urgency: !!raw.urgency,
-    urgencyFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.urgencyFrequency) ? raw.urgencyFrequency : '0',
+    urgencyFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.urgencyFrequency)
+      ? raw.urgencyFrequency
+      : base.urgencyFrequency,
   }
 }
 
 function normalizeBowel(raw) {
   const base = { ...DEFAULT_BOWEL }
   if (!raw) return base
-  const bristol = clamp(Number(raw.bristol ?? 0), 0, 7)
+  const rawBristol = coerceNumber(raw.bristol)
+  const bristol = isNum(rawBristol) && BRISTOL_OPTIONS.includes(rawBristol) ? rawBristol : null
   return {
-    bowelFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.bowelFrequency) ? raw.bowelFrequency : '0',
+    ...base,
+    bowelFrequency: FREQUENCY_OPTIONS.some(opt => opt.id === raw.bowelFrequency)
+      ? raw.bowelFrequency
+      : base.bowelFrequency,
     bristol,
   }
 }
