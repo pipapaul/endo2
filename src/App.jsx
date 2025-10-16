@@ -13,7 +13,7 @@ async function exportReportPdf(filename = 'arzt_kurzbrief.pdf') {
 
   const canvas = await html2canvas(container, {
     backgroundColor: '#ffffff',
-    scale: window.devicePixelRatio > 2 ? 2 : 2,
+    scale: Math.min(2, window.devicePixelRatio || 1),
     useCORS: true,
     logging: false,
     windowWidth: container.scrollWidth,
@@ -100,6 +100,12 @@ const ABSENT = {
 
 const isNum = v => typeof v === 'number' && Number.isFinite(v)
 const toNull = v => (isNum(v) ? v : null)
+
+export function sanitizeDeviceNumber(n) {
+  if (!isNum(n)) return { value: null, absent_reason: ABSENT.UNKNOWN }
+  if (n === 0) return { value: null, absent_reason: ABSENT.ERROR }
+  return { value: n, absent_reason: null }
+}
 
 const STR = {
   appTitle: 'Endo – Tagescheck',
