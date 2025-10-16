@@ -242,6 +242,14 @@ const STR = {
   ],
 }
 
+function formatPbacDisplay(pbac) {
+  if (!pbac || pbac.absent_reason) return STR.noEntry
+  const score = pbac?.dayScore
+  if (!isNum(score)) return STR.noEntry
+  if (score === 0) return STR.noBleeding
+  return score
+}
+
 const SYMPTOMS = [
   { id: 'fatigue', label: 'Müdigkeit' },
   { id: 'nausea', label: 'Übelkeit' },
@@ -964,6 +972,10 @@ function PbacMini({ state, setState, disabled = false }) {
     () => (absentReason ? null : computePbacDayScore({ products, clots, floodingEpisodes: safeEpisodes })),
     [absentReason, products, clots, safeEpisodes],
   )
+  const scoreLabel = useMemo(
+    () => formatPbacDisplay({ dayScore: score, absent_reason: absentReason }),
+    [score, absentReason],
+  )
 
   useEffect(() => {
     setState(prev => {
@@ -1142,7 +1154,7 @@ function PbacMini({ state, setState, disabled = false }) {
         <Tooltip text={STR.pbacClotHint} />
       </div>
       <div className="mt-3 text-sm">
-        Tages-PBAC (Higham): <span className="font-semibold">{isNum(score) ? score : '–'}</span>
+        Tages-PBAC (Higham): <span className="font-semibold">{scoreLabel}</span>
       </div>
     </Section>
   )
@@ -1853,15 +1865,18 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
             </tr>
           </thead>
           <tbody>
-            {list.slice(-20).map(e=>(
-              <tr key={e.id} className="border-b">
-                <td className="py-1 pr-2">{e.date}</td>
-                <td className="py-1 pr-2">{isNum(e.nrs) ? e.nrs : '–'}</td>
-                <td className="py-1 pr-2">{isNum(e.pbac?.dayScore) ? e.pbac.dayScore : '–'}{e.pbac?.periodStart?' (Beginn)':''}</td>
-                <td className="py-1 pr-2">{(e.symptoms||[]).slice().sort((a,b)=>(b.intensity||0)-(a.intensity||0)).slice(0,3).map(s=>s.label).join(', ') || '–'}</td>
-                <td className="py-1">{typeof e.tookMeds==='boolean'?(e.tookMeds?'Ja':'Nein'):'–'}</td>
-              </tr>
-            ))}
+            {list.slice(-20).map(e => {
+              const pbacLabel = formatPbacDisplay(e.pbac)
+              return (
+                <tr key={e.id} className="border-b">
+                  <td className="py-1 pr-2">{e.date}</td>
+                  <td className="py-1 pr-2">{isNum(e.nrs) ? e.nrs : '–'}</td>
+                  <td className="py-1 pr-2">{pbacLabel}{e.pbac?.periodStart ? ' (Beginn)' : ''}</td>
+                  <td className="py-1 pr-2">{(e.symptoms||[]).slice().sort((a,b)=>(b.intensity||0)-(a.intensity||0)).slice(0,3).map(s=>s.label).join(', ') || '–'}</td>
+                  <td className="py-1">{typeof e.tookMeds==='boolean'?(e.tookMeds?'Ja':'Nein'):'–'}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </section>
@@ -2652,29 +2667,32 @@ export default function EndoMiniApp() {
         <div>
           <Section title="Letzte Einträge">
             <ul className="divide-y">
-              {entries.slice(0,50).map(e => (
-                <li key={e.id} className="py-3 flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{e.date}</div>
-                    <div className="text-sm text-gray-600">
-                      NRS {isNum(e.nrs) ? e.nrs : '–'} · PBAC {isNum(e.pbac?.dayScore) ? e.pbac.dayScore : '–'}
-                      {e.pbac?.periodStart ? ' · Beginn' : ''}
-                      {e.pbac?.cupMl ? ` · Cup ${e.pbac.cupMl} ml` : ''}
-                      {e.pbac?.dayScore > 0 && e.pbac.dayScore <= PBAC_RULES.spottingMax ? ` · ${STR.spottingLabel}` : ''}
-                      {typeof e.tookMeds === 'boolean' ? ` · Medikation heute: ${e.tookMeds ? STR.medsYes : STR.medsNo}` : ''}
-                      {(() => {
-                        const syms = (e.symptoms||[]).slice().sort((a,b)=> (b.intensity||0)-(a.intensity||0)).slice(0,3)
-                        return syms.length ? ` · ${STR.cycleCardSymptoms}: ${syms.map(s=>s.label).join(', ')}` : ''
-                      })()}
+              {entries.slice(0,50).map(e => {
+                const pbacLabel = formatPbacDisplay(e.pbac)
+                return (
+                  <li key={e.id} className="py-3 flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{e.date}</div>
+                      <div className="text-sm text-gray-600">
+                        NRS {isNum(e.nrs) ? e.nrs : '–'} · PBAC {pbacLabel}
+                        {e.pbac?.periodStart ? ' · Beginn' : ''}
+                        {e.pbac?.cupMl ? ` · Cup ${e.pbac.cupMl} ml` : ''}
+                        {e.pbac?.dayScore > 0 && e.pbac.dayScore <= PBAC_RULES.spottingMax ? ` · ${STR.spottingLabel}` : ''}
+                        {typeof e.tookMeds === 'boolean' ? ` · Medikation heute: ${e.tookMeds ? STR.medsYes : STR.medsNo}` : ''}
+                        {(() => {
+                          const syms = (e.symptoms||[]).slice().sort((a,b)=> (b.intensity||0)-(a.intensity||0)).slice(0,3)
+                          return syms.length ? ` · ${STR.cycleCardSymptoms}: ${syms.map(s=>s.label).join(', ')}` : ''
+                        })()}
+                      </div>
                     </div>
-                  </div>
-                  <button className="text-sm underline rounded focus-visible:ring-2 focus-visible:ring-rose-400" onClick={()=>{
-                    if (confirm(`Eintrag vom ${e.date} löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
-                      setEntries(entries.filter(x=>x.id!==e.id))
-                    }
-                  }}>Löschen</button>
-                </li>
-              ))}
+                    <button className="text-sm underline rounded focus-visible:ring-2 focus-visible:ring-rose-400" onClick={()=>{
+                      if (confirm(`Eintrag vom ${e.date} löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
+                        setEntries(entries.filter(x=>x.id!==e.id))
+                      }
+                    }}>Löschen</button>
+                  </li>
+                )
+              })}
             </ul>
           </Section>
         </div>
