@@ -1,59 +1,94 @@
-import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react'
 import { createPortal } from 'react-dom'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import {
+  DEFAULT_SETTINGS,
+  clearDatabase,
+  loadEntries as loadEntriesFromStorage,
+  loadSettings as loadSettingsFromStorage,
+  migrateFromLocalStorage,
+  saveEntries as saveEntriesToStorage,
+  saveSettings as saveSettingsToStorage,
+} from './storage.ts'
 
 const A4_WIDTH_MM = 210
 const A4_HEIGHT_MM = 297
 const MARGIN_MM = 12
 
-async function exportReportPdf(filename = 'arzt_kurzbrief.pdf') {
+async function exportReportPdf(filename = 'arzt_kurzbrief.pdf', { compact = false } = {}) {
+  if (document?.fonts?.ready) {
+    try {
+      await document.fonts.ready
+    } catch {}
+  }
   const container = document.getElementById('pdf-render-root')
   if (!container) throw new Error('PDF-Container fehlt')
 
-  const canvas = await html2canvas(container, {
+  const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' })
+  const pageWidth = A4_WIDTH_MM - 2 * MARGIN_MM
+  const pageHeight = A4_HEIGHT_MM - 2 * MARGIN_MM
+  const scale = Math.min(2, window.devicePixelRatio || 1)
+  const cssPxPerMm = container.scrollWidth ? container.scrollWidth / pageWidth : 3.7795
+  const estimatedHeightPx = Math.ceil(container.scrollHeight * scale)
+  const useProgressive = estimatedHeightPx > 14000
+  const baseOptions = {
     backgroundColor: '#ffffff',
-    scale: Math.min(2, window.devicePixelRatio || 1),
+    scale,
     useCORS: true,
     logging: false,
     windowWidth: container.scrollWidth,
-    windowHeight: container.scrollHeight,
-  })
+  }
 
-  const imgData = canvas.toDataURL('image/png')
-  const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' })
+  let firstPage = true
+  const drawCanvas = canvas => {
+    const imgW = canvas.width
+    const imgH = canvas.height
+    if (!imgW || !imgH) return
+    const pxPerMm = imgW / pageWidth
+    const totalHeightMm = imgH / pxPerMm
+    let offsetMm = 0
+    while (offsetMm < totalHeightMm - 0.1) {
+      if (!firstPage) pdf.addPage()
+      firstPage = false
+      const topPx = Math.floor(offsetMm * pxPerMm)
+      const bottomPx = Math.min(imgH, Math.floor((offsetMm + pageHeight) * pxPerMm))
+      const heightPx = Math.max(1, bottomPx - topPx)
+      const pageCanvas = document.createElement('canvas')
+      pageCanvas.width = imgW
+      pageCanvas.height = heightPx
+      const ctx = pageCanvas.getContext('2d')
+      if (!ctx) break
+      ctx.drawImage(canvas, 0, topPx, imgW, heightPx, 0, 0, imgW, heightPx)
+      const imgType = compact ? 'JPEG' : 'PNG'
+      const imgData = compact
+        ? pageCanvas.toDataURL('image/jpeg', 0.92)
+        : pageCanvas.toDataURL('image/png')
+      pdf.addImage(imgData, imgType, MARGIN_MM, MARGIN_MM, pageWidth, heightPx / pxPerMm)
+      offsetMm += pageHeight
+    }
+  }
 
-  const pageWidth = A4_WIDTH_MM - 2 * MARGIN_MM
-  const pageHeight = A4_HEIGHT_MM - 2 * MARGIN_MM
-
-  const imgWidthPx = canvas.width
-  const imgHeightPx = canvas.height
-  const pxPerMm = imgWidthPx / pageWidth
-  const totalHeightMm = imgHeightPx / pxPerMm
-
-  let offsetMm = 0
-  let first = true
-  while (offsetMm < totalHeightMm - 0.1) {
-    if (!first) pdf.addPage()
-    first = false
-
-    const pageCanvas = document.createElement('canvas')
-    pageCanvas.width = imgWidthPx
-    pageCanvas.height = Math.min(
-      imgHeightPx,
-      Math.round((offsetMm + pageHeight) * pxPerMm) - Math.round(offsetMm * pxPerMm)
-    )
-    const ctx = pageCanvas.getContext('2d')
-    ctx.drawImage(
-      canvas,
-      0, Math.round(offsetMm * pxPerMm),
-      imgWidthPx, pageCanvas.height,
-      0, 0,
-      imgWidthPx, pageCanvas.height
-    )
-    const pageImg = pageCanvas.toDataURL('image/png')
-    pdf.addImage(pageImg, 'PNG', MARGIN_MM, MARGIN_MM, pageWidth, pageCanvas.height / pxPerMm)
-    offsetMm += pageHeight
+  if (!useProgressive) {
+    const canvas = await html2canvas(container, {
+      ...baseOptions,
+      windowHeight: container.scrollHeight,
+      height: container.scrollHeight,
+    })
+    drawCanvas(canvas)
+  } else {
+    const pagePixelHeightCss = Math.max(1, Math.floor(pageHeight * cssPxPerMm))
+    const totalHeightCss = container.scrollHeight
+    for (let top = 0; top < totalHeightCss; top += pagePixelHeightCss) {
+      const windowHeight = Math.min(pagePixelHeightCss, totalHeightCss - top)
+      const segmentCanvas = await html2canvas(container, {
+        ...baseOptions,
+        windowHeight,
+        height: windowHeight,
+        scrollY: top,
+      })
+      drawCanvas(segmentCanvas)
+    }
   }
 
   pdf.save(filename)
@@ -86,10 +121,6 @@ class ErrorBoundary extends React.Component {
 }
 
 // ---------- Constants & Helpers ----------
-const STORAGE_KEY = 'endo_mini_v1_data'
-const SETTINGS_KEY = 'endo_mini_v1_settings'
-const ENC_KEY = 'endo_mini_v1_cipher'
-
 const ABSENT = {
   UNKNOWN: 'unknown',
   NOT_ASKED: 'not-asked',
@@ -97,6 +128,8 @@ const ABSENT = {
   NOT_APPLICABLE: 'not-applicable',
   ERROR: 'error',
 }
+
+const APP_CACHE_NAME = 'endo-mini-shell-v1'
 
 const isNum = v => typeof v === 'number' && Number.isFinite(v)
 const toNull = v => (isNum(v) ? v : null)
@@ -133,6 +166,21 @@ const STR = {
   sleepHint: '0 = sehr schlecht, 10 = sehr gut.',
   saved: 'Gespeichert',
   dataLocal: 'Daten bleiben auf diesem Gerät.',
+  persistTitle: 'Daten dauerhaft behalten',
+  persistHint: 'Bitte Browser um dauerhafte Speicherung, damit deine Einträge beim Löschen von Website-Daten bleiben.',
+  persistButton: 'Daten dauerhaft behalten',
+  persistRetry: 'Erneut anfragen',
+  persistGranted: 'Dauerhafte Speicherung aktiv.',
+  persistDenied: 'Anfrage wurde abgelehnt.',
+  persistUnsupported: 'Dauerhafte Speicherung wird nicht unterstützt.',
+  persistError: 'Anfrage fehlgeschlagen.',
+  storagePersistent: 'Persistent',
+  storageUsage: 'Speicher',
+  persistentYes: 'ja',
+  persistentNo: 'nein',
+  installPromptLabel: 'App installieren',
+  installPromptHint: 'Als App hinzufügen, um offline zu starten.',
+  installPromptLater: 'Später',
   lock: 'PIN-Schutz',
   enableEncryption: 'Verschlüsselung aktivieren',
   setPin: 'PIN festlegen',
@@ -142,6 +190,16 @@ const STR = {
   disclaimerCorr: 'Das sind Zusammenhänge, keine Beweise. Wir zeigen sie erst bei genug Daten.',
   pdf1: 'Arzt-Kurzbrief (Druckansicht)',
   jsonExport: 'JSON exportieren',
+  compactExport: 'Kompakter Export (kleinere Datei)',
+  backupTitle: 'Backup',
+  backupExport: 'Backup exportieren',
+  backupExportDone: 'Backup exportiert',
+  backupExportFail: 'Export fehlgeschlagen',
+  backupImport: 'Backup importieren',
+  backupImportDone: 'Backup importiert',
+  backupImportFail: 'Import fehlgeschlagen',
+  backupPassRequired: 'Bitte Passphrase eingeben, um verschlüsselte Daten zu importieren.',
+  backupLockedHint: 'Bitte zuerst mit Passphrase entsperren.',
   dateLabel: 'Datum',
   todayJump: 'Heute',
   pickDate: 'Datum wählen',
@@ -569,62 +627,17 @@ function median(values) {
   return sorted[mid]
 }
 
-function useLocalState(key, initial) {
-  const [v, setV] = useState(() => {
-    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : initial } catch { return initial }
-  })
-  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(v)) } catch {} }, [key, v])
-  return [v, setV]
-}
-
-// Minimal AES-GCM (optional). Falls WebCrypto fehlt, speichere Klartext.
-async function deriveKey(pass, salt, iterations = 120000) {
-  const enc = new TextEncoder()
-  const keyMat = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey'])
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
-    keyMat,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  )
-}
-async function encryptBlob(obj, pass, iterations = 120000) {
-  if (!window.crypto || !pass) return { mode: 'plain', data: JSON.stringify(obj) }
-  const enc = new TextEncoder()
-  const iv = crypto.getRandomValues(new Uint8Array(12))
-  const salt = crypto.getRandomValues(new Uint8Array(16))
-  const key = await deriveKey(pass, salt, iterations)
-  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj)))
-  return { mode: 'gcm', iv: Array.from(iv), salt: Array.from(salt), iter: iterations, data: btoa(String.fromCharCode(...new Uint8Array(cipher))) }
-}
-async function decryptBlob(bundle, pass) {
-  try {
-    if (!bundle || bundle.mode !== 'gcm') return bundle?.data ? JSON.parse(bundle.data) : []
-    const dec = new TextDecoder()
-    const iv = new Uint8Array(bundle.iv)
-    const salt = new Uint8Array(bundle.salt)
-    const iterations = bundle.iter || 120000
-    const key = await deriveKey(pass, salt, iterations)
-    const bytes = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0))
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, bytes)
-    return JSON.parse(dec.decode(plain))
-  } catch { return [] }
-}
-
-async function persistEntries(entries, settings, pass) {
-  const { encryption, kdfStrong } = settings || {}
-  if (encryption) {
-    if (!pass || pass.length < 4) return 'skip'
-    const iterations = kdfStrong ? 310000 : 120000
-    const bundle = await encryptBlob(entries, pass, iterations)
-    localStorage.setItem(ENC_KEY, JSON.stringify(bundle))
-    localStorage.removeItem(STORAGE_KEY)
-    return 'encrypted'
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
-  localStorage.removeItem(ENC_KEY)
-  return 'plain'
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) return '–'
+  if (bytes < 1024) return `${Math.round(bytes)} B`
+  const units = ['KB', 'MB', 'GB', 'TB']
+  let value = bytes
+  let unitIndex = -1
+  do {
+    value /= 1024
+    unitIndex += 1
+  } while (value >= 1024 && unitIndex < units.length - 1)
+  return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`
 }
 
 // ---------- Period helpers ----------
@@ -2093,7 +2106,8 @@ function DateNav({ activeDate, setActiveDate, hasEntry, onPrev, onNext, onToday,
 export default function EndoMiniApp() {
   const [tab, setTab] = useState('today') // today|trends|entries|export
   const [activeDate, setActiveDate] = useState(todayISO())
-  const [settings, setSettings] = useLocalState(SETTINGS_KEY, { quickMode: true, encryption: false, kdfStrong: false })
+  const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS }))
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [pass, setPass] = useState('')
   const [locked, setLocked] = useState(false)
 
@@ -2104,25 +2118,177 @@ export default function EndoMiniApp() {
   const [loaded, setLoaded] = useState(false)
   const [reportRange, setReportRange] = useState({ from: '', to: '' })
   const [showReport, setShowReport] = useState(false)
+  const [storageInfo, setStorageInfo] = useState({ persisted: null, usage: null, quota: null })
+  const [persistRequestState, setPersistRequestState] = useState(null)
+  const [installPromptEvent, setInstallPromptEvent] = useState(null)
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
+  const [installDismissed, setInstallDismissed] = useState(false)
 
-  // Load persisted data (possibly encrypted)
-  useEffect(()=>{
-    (async () => {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      const encBundle = localStorage.getItem(ENC_KEY)
-      if (settings.encryption && encBundle) {
-        try { const parsed = JSON.parse(encBundle); const dec = await decryptBlob(parsed, pass); setEntries(Array.isArray(dec)?dec:[]); setLoaded(true); setLocked(false) } catch { setLocked(true); setLoaded(true) }
-      } else {
-        try { setEntries(raw?JSON.parse(raw):[]); setLoaded(true) } catch { setEntries([]); setLoaded(true) }
+  const isMounted = useRef(true)
+  useEffect(() => () => { isMounted.current = false }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      await migrateFromLocalStorage()
+      try {
+        const stored = await loadSettingsFromStorage()
+        if (!cancelled && stored) {
+          setSettings({ ...DEFAULT_SETTINGS, ...stored })
+        }
+      } catch (error) {
+        console.error('Einstellungen laden fehlgeschlagen', error)
+      } finally {
+        if (!cancelled) setSettingsLoaded(true)
       }
     })()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.encryption, pass])
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
-  useEffect(()=>{
-    if (!loaded) return
-    persistEntries(entries, { encryption, kdfStrong }, pass).catch(()=>{})
-  }, [entries, encryption, kdfStrong, loaded, pass])
+  const updateStorageInfo = useCallback(async () => {
+    if (typeof navigator === 'undefined' || !navigator.storage) {
+      if (isMounted.current) {
+        setStorageInfo({ persisted: null, usage: null, quota: null })
+      }
+      return
+    }
+    try {
+      const persisted = navigator.storage.persisted ? await navigator.storage.persisted() : null
+      const estimate = navigator.storage.estimate ? await navigator.storage.estimate() : undefined
+      if (!isMounted.current) return
+      setStorageInfo({
+        persisted: typeof persisted === 'boolean' ? persisted : null,
+        usage: typeof estimate?.usage === 'number' ? estimate.usage : null,
+        quota: typeof estimate?.quota === 'number' ? estimate.quota : null,
+      })
+    } catch (error) {
+      console.error('Speichernutzung konnte nicht bestimmt werden', error)
+      if (!isMounted.current) return
+      setStorageInfo(info => ({ ...info }))
+    }
+  }, [])
+
+  useEffect(() => {
+    updateStorageInfo()
+  }, [updateStorageInfo])
+
+  useEffect(() => {
+    if (!settingsLoaded) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const result = await loadEntriesFromStorage(pass, settings)
+        if (cancelled) return
+        setLocked(result.locked)
+        setEntries(result.locked ? [] : result.entries)
+      } catch (error) {
+        console.error('Einträge laden fehlgeschlagen', error)
+        if (!cancelled) {
+          setEntries([])
+          setLocked(false)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoaded(true)
+          updateStorageInfo()
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pass, settings.encryption, settingsLoaded, updateStorageInfo])
+
+  useEffect(() => {
+    if (!settingsLoaded) return
+    saveSettingsToStorage(settings).catch(error => console.error('Einstellungen speichern fehlgeschlagen', error))
+  }, [settings, settingsLoaded])
+
+  useEffect(() => {
+    if (!loaded || !settingsLoaded) return
+    saveEntriesToStorage(entries, pass, settings)
+      .then(result => {
+        if (result !== 'skip') {
+          updateStorageInfo()
+        }
+      })
+      .catch(error => console.error('Einträge speichern fehlgeschlagen', error))
+  }, [entries, settings.encryption, settings.kdfStrong, pass, loaded, settingsLoaded, updateStorageInfo])
+
+  const persistenceAvailable = typeof navigator !== 'undefined' && !!navigator.storage?.persist && !!navigator.storage?.persisted
+
+  const handlePersistenceRequest = useCallback(async () => {
+    if (!navigator?.storage?.persist || !navigator.storage?.persisted) {
+      setPersistRequestState('unsupported')
+      return
+    }
+    try {
+      const already = await navigator.storage.persisted()
+      if (already) {
+        setPersistRequestState('granted')
+        await updateStorageInfo()
+        return
+      }
+      const granted = await navigator.storage.persist()
+      setPersistRequestState(granted ? 'granted' : 'denied')
+      await updateStorageInfo()
+    } catch (error) {
+      console.error('Persistenzanfrage fehlgeschlagen', error)
+      setPersistRequestState('error')
+    }
+  }, [updateStorageInfo])
+
+  const persistenceMessage = useMemo(() => {
+    if (storageInfo.persisted) return STR.persistGranted
+    if (persistRequestState === 'granted') return STR.persistGranted
+    if (persistRequestState === 'denied') return STR.persistDenied
+    if (persistRequestState === 'unsupported') return STR.persistUnsupported
+    if (persistRequestState === 'error') return STR.persistError
+    return ''
+  }, [persistRequestState, storageInfo.persisted])
+
+  useEffect(() => {
+    const handleBeforeInstall = event => {
+      event.preventDefault()
+      setInstallPromptEvent(event)
+      if (!installDismissed) {
+        setShowInstallPrompt(true)
+      }
+    }
+    const handleInstalled = () => {
+      setInstallPromptEvent(null)
+      setShowInstallPrompt(false)
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
+    window.addEventListener('appinstalled', handleInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
+      window.removeEventListener('appinstalled', handleInstalled)
+    }
+  }, [installDismissed])
+
+  const handleInstallClick = useCallback(async () => {
+    if (!installPromptEvent) return
+    try {
+      installPromptEvent.prompt?.()
+      const choice = installPromptEvent.userChoice ? await installPromptEvent.userChoice : null
+      setInstallPromptEvent(null)
+      setShowInstallPrompt(false)
+      if (choice && choice.outcome === 'dismissed') {
+        setInstallDismissed(true)
+      }
+    } catch {
+      setInstallPromptEvent(null)
+      setShowInstallPrompt(false)
+    }
+  }, [installPromptEvent])
+
+  const handleInstallDismiss = useCallback(() => {
+    setInstallDismissed(true)
+    setShowInstallPrompt(false)
+  }, [])
 
   // Today Wizard state
   const [step, setStep] = useState(0)
@@ -2151,6 +2317,119 @@ export default function EndoMiniApp() {
   const [isEditing, setIsEditing] = useState(true)
   const [banner, setBanner] = useState({ show:false, text:'' })
   const [confirmOverwrite, setConfirmOverwrite] = useState(false)
+
+  const handleJsonExport = useCallback(async () => {
+    try {
+      const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' })
+      const fileName = `endo_export_${todayISO()}.json`
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+          })
+          const writable = await handle.createWritable()
+          await writable.write(blob)
+          await writable.close()
+          setBanner({ show: true, text: STR.backupExportDone })
+          return
+        } catch (error) {
+          if (error?.name === 'AbortError') return
+          console.warn('File System Access fehlgeschlagen, Fallback verwenden', error)
+        }
+      }
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.rel = 'noopener'
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 2000)
+      setBanner({ show: true, text: STR.backupExportDone })
+    } catch (error) {
+      console.error('Backup-Export fehlgeschlagen', error)
+      setBanner({ show: true, text: STR.backupExportFail })
+    }
+  }, [entries])
+
+  const handleJsonImport = useCallback(async () => {
+    try {
+      if (settings.encryption && (pass || '').length < 4) {
+        setBanner({ show: true, text: STR.backupPassRequired })
+        return
+      }
+
+      let file = null
+
+      if (window.showOpenFilePicker) {
+        try {
+          const handles = await window.showOpenFilePicker({
+            multiple: false,
+            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+          })
+          if (handles && handles[0]) {
+            file = await handles[0].getFile()
+          }
+        } catch (error) {
+          if (error?.name === 'AbortError') return
+          throw error
+        }
+      } else {
+        file = await new Promise(resolve => {
+          const input = document.createElement('input')
+          input.type = 'file'
+          input.accept = 'application/json'
+          input.style.display = 'none'
+          let resolved = false
+          const cleanup = () => {
+            window.removeEventListener('focus', onFocus)
+            input.remove()
+          }
+          const onChange = () => {
+            resolved = true
+            cleanup()
+            resolve(input.files?.[0] || null)
+          }
+          const onFocus = () => {
+            setTimeout(() => {
+              if (!resolved) {
+                resolved = true
+                cleanup()
+                resolve(null)
+              }
+            }, 300)
+          }
+          input.addEventListener('change', onChange, { once: true })
+          window.addEventListener('focus', onFocus, { once: true })
+          document.body.appendChild(input)
+          input.click()
+        })
+      }
+
+      if (!file) return
+
+      const text = await file.text()
+      const parsed = JSON.parse(text)
+      const imported = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.entries)
+          ? parsed.entries
+          : null
+
+      if (!Array.isArray(imported)) {
+        throw new Error('Ungültiges Format')
+      }
+
+      const sanitized = imported.filter(item => item && typeof item.date === 'string')
+      setEntries(sanitized)
+      setBanner({ show: true, text: STR.backupImportDone })
+      await updateStorageInfo()
+    } catch (error) {
+      if (error?.name === 'AbortError') return
+      console.error('Backup-Import fehlgeschlagen', error)
+      setBanner({ show: true, text: STR.backupImportFail })
+    }
+  }, [pass, settings.encryption, updateStorageInfo])
 
   const handleNrsChange = value => {
     setNrs(value)
@@ -2483,6 +2762,7 @@ export default function EndoMiniApp() {
   }, [entries])
 
   const hasEntryToday = entries.some(e=>e.date===activeDate)
+  const exportDisabled = settings.encryption && locked
 
   // Date navigation handlers
   const goPrev = () => setActiveDate(addDaysISO(activeDate, -1))
@@ -2508,15 +2788,16 @@ export default function EndoMiniApp() {
           <h1 className="text-xl font-bold text-rose-900">{STR.appTitle}</h1>
           <details className="relative">
    <summary className="list-none cursor-pointer px-3 py-2 rounded-xl border border-rose-200 bg-white">Einstellungen</summary>
-   <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow p-4 text-sm">
-     <div className="flex items-center justify-between mb-2">
-       <span>Schnellmodus</span>
-       <input
-         type="checkbox"
-         checked={settings.quickMode}
-         onChange={e=>setSettings({...settings, quickMode:e.target.checked})}
-       />
-     </div>
+  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow p-4 text-sm">
+    <div className="flex items-center justify-between mb-2">
+      <span>Schnellmodus</span>
+      <input
+        type="checkbox"
+        checked={settings.quickMode}
+        disabled={!settingsLoaded}
+        onChange={e=>setSettings(prev => ({ ...prev, quickMode: e.target.checked }))}
+      />
+    </div>
 
      {/* Passphrase immer sichtbar machen */}
      <div className="mt-2">
@@ -2533,47 +2814,90 @@ export default function EndoMiniApp() {
        <p className="text-xs text-gray-500">Passphrase wird nicht gespeichert oder wiederhergestellt. {STR.dataLocal}</p>
      </div>
 
-     <div className="flex items-center justify-between mb-2 mt-3">
-       <span>Verschlüsselung</span>
-       <input
-         type="checkbox"
-         checked={settings.encryption}
-         disabled={(pass||'').length < 4}
-         onChange={e=>{
-           if (e.target.checked && (pass||'').length < 4) return
-           setSettings({...settings, encryption:e.target.checked})
-         }}
-         aria-disabled={(pass||'').length < 4}
-       />
-     </div>
+    <div className="flex items-center justify-between mb-2 mt-3">
+      <span>Verschlüsselung</span>
+      <input
+        type="checkbox"
+        checked={settings.encryption}
+        disabled={(pass||'').length < 4 || !settingsLoaded}
+        onChange={e=>{
+          if (e.target.checked && (pass||'').length < 4) return
+          setSettings(prev => ({ ...prev, encryption: e.target.checked }))
+        }}
+        aria-disabled={(pass||'').length < 4 || !settingsLoaded}
+      />
+    </div>
 
-     <div className="flex items-center justify-between mb-2">
-       <span>{STR.strongerKdf}</span>
-       <input
-         type="checkbox"
-         checked={!!settings.kdfStrong}
-         onChange={e=>setSettings({...settings, kdfStrong:e.target.checked})}
-         disabled={!settings.encryption}
-       />
-     </div>
+    <div className="flex items-center justify-between mb-2">
+      <span>{STR.strongerKdf}</span>
+      <input
+        type="checkbox"
+        checked={!!settings.kdfStrong}
+        onChange={e=>setSettings(prev => ({ ...prev, kdfStrong: e.target.checked }))}
+        disabled={!settings.encryption}
+      />
+    </div>
 
-     {/* Locked-Hinweis, falls Entschlüsselung scheitert */}
-     {settings.encryption && locked && (
-       <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-2 text-xs">
-         Daten sind verschlüsselt. Bitte korrekte Passphrase eingeben, um zu entsperren.
-       </div>
-     )}
+    {/* Locked-Hinweis, falls Entschlüsselung scheitert */}
+    {settings.encryption && locked && (
+      <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-2 text-xs">
+        Daten sind verschlüsselt. Bitte korrekte Passphrase eingeben, um zu entsperren.
+      </div>
+    )}
 
-     <div className="mt-3 flex items-center justify-between">
-       <span className="text-red-600">{STR.clearAll}</span>
-       <button
-         className="px-3 py-2 rounded-xl border"
-         onClick={()=>{ if (confirm('Wirklich alles löschen?')) { localStorage.clear(); location.reload() } }}
-       >
-         Löschen
-       </button>
-     </div>
-   </div>
+    <div className="mt-3 border-t border-rose-100 pt-3 text-xs text-gray-600 space-y-1">
+      <div className="flex items-center justify-between">
+        <span>{STR.storagePersistent}</span>
+        <span>
+          {storageInfo.persisted == null
+            ? '–'
+            : storageInfo.persisted
+              ? STR.persistentYes
+              : STR.persistentNo}
+        </span>
+      </div>
+      {typeof storageInfo.usage === 'number' && typeof storageInfo.quota === 'number' && (
+        <div className="flex items-center justify-between">
+          <span>{STR.storageUsage}</span>
+          <span>{`${formatBytes(storageInfo.usage)} / ${formatBytes(storageInfo.quota)}`}</span>
+        </div>
+      )}
+      {persistenceMessage && (
+        <div className="text-xs text-gray-600">{persistenceMessage}</div>
+      )}
+      {persistenceAvailable && (
+        <button type="button" className="text-xs underline" onClick={handlePersistenceRequest}>
+          {STR.persistRetry}
+        </button>
+      )}
+    </div>
+
+    <div className="mt-3 flex items-center justify-between">
+      <span className="text-red-600">{STR.clearAll}</span>
+      <button
+        className="px-3 py-2 rounded-xl border"
+        onClick={async ()=>{
+          if (!confirm('Wirklich alles löschen?')) return
+          try {
+            await clearDatabase()
+          } catch (error) {
+            console.error('Datenbank löschen fehlgeschlagen', error)
+          }
+          if (typeof caches !== 'undefined') {
+            try {
+              await caches.delete(APP_CACHE_NAME)
+            } catch (error) {
+              console.warn('Cache konnte nicht gelöscht werden', error)
+            }
+          }
+          localStorage.clear()
+          location.reload()
+        }}
+      >
+        Löschen
+      </button>
+    </div>
+  </div>
  </details>
         </div>
         {tab==='today' && <Stepper step={step} total={totalSteps} />}
@@ -2590,6 +2914,26 @@ export default function EndoMiniApp() {
           />
         )}
       </header>
+
+      {storageInfo.persisted === false && (
+        <div className="mx-4 mt-3 rounded-2xl border border-rose-200 bg-white p-3 text-sm shadow-sm">
+          <div className="font-semibold text-rose-900">{STR.persistTitle}</div>
+          <p className="mt-1 text-xs text-gray-600">{STR.persistHint}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="px-3 py-2 rounded-xl bg-rose-600 text-white disabled:opacity-50 disabled:pointer-events-none"
+              onClick={handlePersistenceRequest}
+              disabled={!persistenceAvailable}
+            >
+              {STR.persistButton}
+            </button>
+            {persistenceMessage && (
+              <span className="text-xs text-gray-700">{persistenceMessage}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {settings.encryption && locked && (
         <div className="mx-4 mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
@@ -2838,19 +3182,46 @@ export default function EndoMiniApp() {
                 />
               </label>
               <button
-                className="px-4 py-2 rounded-xl bg-rose-600 text-white"
-                onClick={() => exportReportPdf(`endo_kurzbrief_${todayISO()}.pdf`)}
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white disabled:opacity-50 disabled:pointer-events-none"
+                onClick={() => exportReportPdf(`endo_kurzbrief_${todayISO()}.pdf`, { compact: !!settings.compactPdf })}
+                disabled={exportDisabled}
               >
                 PDF herunterladen
               </button>
             </div>
+            <label className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={!!settings.compactPdf}
+                onChange={e=>setSettings(prev => ({ ...prev, compactPdf: e.target.checked }))}
+                disabled={!settingsLoaded}
+              />
+              {STR.compactExport}
+            </label>
+            {exportDisabled && (
+              <p className="mt-2 text-xs text-gray-600">{STR.backupLockedHint}</p>
+            )}
           </Section>
-          <Section title="JSON">
-            <button className="px-4 py-2 rounded-xl border" onClick={()=>{
-              const blob = new Blob([JSON.stringify(entries,null,2)], { type:'application/json' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a'); a.href = url; a.download = `endo_export_${todayISO()}.json`; a.click(); URL.revokeObjectURL(url)
-            }}>{STR.jsonExport}</button>
+          <Section title={STR.backupTitle}>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="px-4 py-2 rounded-xl border disabled:opacity-50 disabled:pointer-events-none"
+                onClick={handleJsonExport}
+                disabled={exportDisabled}
+              >
+                {STR.backupExport}
+              </button>
+              <button
+                className="px-4 py-2 rounded-xl border disabled:opacity-50 disabled:pointer-events-none"
+                onClick={handleJsonImport}
+                disabled={exportDisabled}
+              >
+                {STR.backupImport}
+              </button>
+            </div>
+            {exportDisabled && (
+              <p className="mt-2 text-xs text-gray-600">{STR.backupLockedHint}</p>
+            )}
           </Section>
           <Section title={STR.tipsTitle} hint={STR.tipsHint}>
             <ul className="list-disc space-y-2 pl-5 text-sm text-gray-600">
@@ -2859,6 +3230,31 @@ export default function EndoMiniApp() {
               ))}
             </ul>
           </Section>
+        </div>
+      )}
+
+      {showInstallPrompt && installPromptEvent && (
+        <div className="fixed bottom-24 left-4 right-4 z-[70]">
+          <div className="rounded-2xl border border-rose-200 bg-white p-3 shadow-lg flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-sm font-semibold text-rose-900">{STR.installPromptLabel}</div>
+              <p className="text-xs text-gray-600">{STR.installPromptHint}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="px-3 py-2 rounded-xl bg-rose-600 text-white"
+                onClick={handleInstallClick}
+              >
+                {STR.installPromptLabel}
+              </button>
+              <button
+                className="px-3 py-2 rounded-xl border text-xs"
+                onClick={handleInstallDismiss}
+              >
+                {STR.installPromptLater}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
