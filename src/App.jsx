@@ -90,6 +90,17 @@ const STORAGE_KEY = 'endo_mini_v1_data'
 const SETTINGS_KEY = 'endo_mini_v1_settings'
 const ENC_KEY = 'endo_mini_v1_cipher'
 
+const ABSENT = {
+  UNKNOWN: 'unknown',
+  NOT_ASKED: 'not-asked',
+  ASKED_DECLINED: 'asked-declined',
+  NOT_APPLICABLE: 'not-applicable',
+  ERROR: 'error',
+}
+
+const isNum = v => typeof v === 'number' && Number.isFinite(v)
+const toNull = v => (isNum(v) ? v : null)
+
 const STR = {
   appTitle: 'Endo – Tagescheck',
   today: 'Heute',
