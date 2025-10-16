@@ -919,9 +919,69 @@ function Chip({ active, onClick, children, disabled=false }) {
   )
 }
 
-function NrsSlider({ value, onChange, disabled=false, absentReason, onToggleAbsent, onFirstActivate }) {
+function NrsSlider({
+  value,
+  onChange,
+  disabled = false,
+  absentReason,
+  onToggleAbsent,
+  onFirstActivate,
+  detailsValue,
+  onDetailsChange,
+}) {
+  const [detailsOpen, setDetailsOpen] = useState(false)
   const displayValue = Number.isFinite(value) ? value : '–'
   const toggleLabel = absentReason ? 'Erfassung aktivieren' : 'Nicht erfassen'
+  const canAccessDetails = Number.isFinite(value) && value > 0
+  const detailsDisabled = disabled || !canAccessDetails
+  const showDetails = detailsValue && typeof onDetailsChange === 'function'
+
+  useEffect(() => {
+    if (detailsDisabled) {
+      setDetailsOpen(false)
+    }
+  }, [detailsDisabled])
+
+  const dysp = detailsValue?.dyspareunia ?? DEFAULT_SUB_NRS.dyspareunia
+  const toggleTiming = key => {
+    if (detailsDisabled || !detailsValue) return
+    onDetailsChange({
+      ...detailsValue,
+      dyspareunia: {
+        ...dysp,
+        timing: { ...dysp.timing, [key]: !dysp.timing[key] },
+      },
+    })
+  }
+  const toggleLocation = key => {
+    if (detailsDisabled || !detailsValue) return
+    onDetailsChange({
+      ...detailsValue,
+      dyspareunia: {
+        ...dysp,
+        location: { ...dysp.location, [key]: !dysp.location[key] },
+      },
+    })
+  }
+  const toggleAvoidance = () => {
+    if (detailsDisabled || !detailsValue) return
+    onDetailsChange({
+      ...detailsValue,
+      dyspareunia: { ...dysp, avoidance: !dysp.avoidance },
+    })
+  }
+  const updateDyspNrs = v => {
+    if (detailsDisabled || !detailsValue) return
+    onDetailsChange({
+      ...detailsValue,
+      dyspareunia: { ...dysp, nrs: v },
+    })
+  }
+  const updateField = (field, v) => {
+    if (detailsDisabled || !detailsValue) return
+    onDetailsChange({ ...detailsValue, [field]: v })
+  }
+
   return (
     <Section
       title={STR.nrsQ}
@@ -947,6 +1007,92 @@ function NrsSlider({ value, onChange, disabled=false, absentReason, onToggleAbse
           onFirstActivate={onFirstActivate}
         />
       </div>
+      {showDetails && (
+        <div className="mt-4 border-t border-rose-100 pt-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-rose-900">{STR.subNrsTitle}</h3>
+            <button
+              type="button"
+              className="text-sm text-rose-700 underline disabled:opacity-50 disabled:pointer-events-none"
+              onClick={() => setDetailsOpen(open => !open)}
+              disabled={detailsDisabled}
+            >
+              {detailsOpen ? STR.lessDetails : STR.moreDetails}
+            </button>
+          </div>
+          {!canAccessDetails && (
+            <p className="text-xs text-gray-500">Aktiviere mit Schmerz &gt; 0.</p>
+          )}
+          {detailsOpen && !detailsDisabled && (
+            <div className="space-y-4">
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {STR.dyspareuniaLabel}: <b>{isNum(dysp.nrs) ? dysp.nrs : '–'}</b>
+                  </span>
+                  <Tooltip text={STR.dyspareuniaHint} />
+                </div>
+                <Range value={dysp.nrs} onChange={updateDyspNrs} aria={STR.dyspareuniaLabel} disabled={detailsDisabled} />
+                <div className="mt-2 text-xs text-rose-700">Zeitpunkt</div>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  <Chip active={dysp.timing.during} onClick={() => toggleTiming('during')} disabled={detailsDisabled}>
+                    {STR.timingDuring}
+                  </Chip>
+                  <Chip active={dysp.timing.after} onClick={() => toggleTiming('after')} disabled={detailsDisabled}>
+                    {STR.timingAfter}
+                  </Chip>
+                </div>
+                <div className="mt-3 text-xs text-rose-700">Lokalisation</div>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  <Chip
+                    active={dysp.location.superficial}
+                    onClick={() => toggleLocation('superficial')}
+                    disabled={detailsDisabled}
+                  >
+                    {STR.locationSuperficial}
+                  </Chip>
+                  <Chip active={dysp.location.deep} onClick={() => toggleLocation('deep')} disabled={detailsDisabled}>
+                    {STR.locationDeep}
+                  </Chip>
+                </div>
+                <div className="mt-3">
+                  <Chip active={dysp.avoidance} onClick={toggleAvoidance} disabled={detailsDisabled}>
+                    {STR.avoidanceLabel}
+                  </Chip>
+                </div>
+              </div>
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {STR.dysuriaLabel}: <b>{isNum(detailsValue.dysuria) ? detailsValue.dysuria : '–'}</b>
+                  </span>
+                  <Tooltip text={STR.dysuriaHint} />
+                </div>
+                <Range
+                  value={detailsValue.dysuria}
+                  onChange={v => updateField('dysuria', v)}
+                  aria={STR.dysuriaLabel}
+                  disabled={detailsDisabled}
+                />
+              </div>
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {STR.dyscheziaLabel}: <b>{isNum(detailsValue.dyschezia) ? detailsValue.dyschezia : '–'}</b>
+                  </span>
+                  <Tooltip text={STR.dyscheziaHint} />
+                </div>
+                <Range
+                  value={detailsValue.dyschezia}
+                  onChange={v => updateField('dyschezia', v)}
+                  aria={STR.dyscheziaLabel}
+                  disabled={detailsDisabled}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </Section>
   )
 }
@@ -1307,90 +1453,6 @@ function SleepScale({ value, onChange, disabled=false, absentReason, onToggleAbs
         onFirstActivate={onFirstActivate}
       />
     </Section>
-  )
-}
-
-function PainDetails({ value, onChange, disabled = false }) {
-  const [open, setOpen] = useState(false)
-  if (!value) return null
-  const dysp = value.dyspareunia
-  const toggleTiming = key => {
-    if (disabled) return
-    onChange({ ...value, dyspareunia: { ...dysp, timing: { ...dysp.timing, [key]: !dysp.timing[key] } } })
-  }
-  const toggleLocation = key => {
-    if (disabled) return
-    onChange({ ...value, dyspareunia: { ...dysp, location: { ...dysp.location, [key]: !dysp.location[key] } } })
-  }
-  const toggleAvoidance = () => {
-    if (disabled) return
-    onChange({ ...value, dyspareunia: { ...dysp, avoidance: !dysp.avoidance } })
-  }
-  const updateDyspNrs = v => {
-    if (disabled) return
-    onChange({ ...value, dyspareunia: { ...dysp, nrs: v } })
-  }
-  const updateField = (field, v) => {
-    if (disabled) return
-    onChange({ ...value, [field]: v })
-  }
-  return (
-    <section className="p-4">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-rose-900">{STR.subNrsTitle}</h2>
-        <button
-          type="button"
-          className="text-sm text-rose-700 underline"
-          onClick={() => setOpen(o => !o)}
-        >
-          {open ? STR.lessDetails : STR.moreDetails}
-        </button>
-      </div>
-      {open && (
-        <div className="bg-white rounded-2xl shadow p-3">
-          <div className="mb-4">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-sm font-medium">
-              {STR.dyspareuniaLabel}: <b>{isNum(dysp.nrs) ? dysp.nrs : '–'}</b>
-            </span>
-            <Tooltip text={STR.dyspareuniaHint} />
-          </div>
-            <Range value={dysp.nrs} onChange={updateDyspNrs} aria={STR.dyspareuniaLabel} disabled={disabled} />
-            <div className="mt-2 text-xs text-rose-700">Zeitpunkt</div>
-            <div className="flex flex-wrap gap-2 mt-1">
-              <Chip active={dysp.timing.during} onClick={() => toggleTiming('during')} disabled={disabled}>{STR.timingDuring}</Chip>
-              <Chip active={dysp.timing.after} onClick={() => toggleTiming('after')} disabled={disabled}>{STR.timingAfter}</Chip>
-            </div>
-            <div className="mt-3 text-xs text-rose-700">Lokalisation</div>
-            <div className="flex flex-wrap gap-2 mt-1">
-              <Chip active={dysp.location.superficial} onClick={() => toggleLocation('superficial')} disabled={disabled}>{STR.locationSuperficial}</Chip>
-              <Chip active={dysp.location.deep} onClick={() => toggleLocation('deep')} disabled={disabled}>{STR.locationDeep}</Chip>
-            </div>
-            <div className="mt-3">
-              <Chip active={dysp.avoidance} onClick={toggleAvoidance} disabled={disabled}>{STR.avoidanceLabel}</Chip>
-            </div>
-          </div>
-          <div className="mb-4">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-sm font-medium">
-              {STR.dysuriaLabel}: <b>{isNum(value.dysuria) ? value.dysuria : '–'}</b>
-            </span>
-            <Tooltip text={STR.dysuriaHint} />
-          </div>
-            <Range value={value.dysuria} onChange={v => updateField('dysuria', v)} aria={STR.dysuriaLabel} disabled={disabled} />
-          </div>
-          <div>
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-sm font-medium">
-              {STR.dyscheziaLabel}: <b>{isNum(value.dyschezia) ? value.dyschezia : '–'}</b>
-            </span>
-            <Tooltip text={STR.dyscheziaHint} />
-          </div>
-            <Range value={value.dyschezia} onChange={v => updateField('dyschezia', v)} aria={STR.dyscheziaLabel} disabled={disabled} />
-          </div>
-        </div>
-      )}
-    </section>
   )
 }
 
@@ -2081,7 +2143,7 @@ export default function EndoMiniApp() {
 
   // Today Wizard state
   const [step, setStep] = useState(0)
-  const totalSteps = 9
+  const totalSteps = 8
   const yesterday = useMemo(()=>{
     const y = new Date(activeDate); y.setDate(y.getDate()-1)
     const iso = y.toISOString().slice(0,10)
@@ -2619,19 +2681,20 @@ export default function EndoMiniApp() {
               absentReason={nrsAbsent}
               onToggleAbsent={toggleNrsCapture}
               onFirstActivate={()=>setNrsAbsent(null)}
+              detailsValue={subNrs}
+              onDetailsChange={setSubNrs}
             />
           )}</div>
-          <div ref={sectionRefs[1]}>{step>=1 && <PainDetails value={subNrs} onChange={setSubNrs} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[2]}>{step>=2 && <PbacMini state={pbac} setState={setPbac} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[3]}>{step>=3 && <BodyMapSimple zones={zones} setZones={setZones} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[4]}>{step>=4 && <SymptomPicker selected={symptoms} setSelected={setSymptoms} disabled={!isEditing} />}</div>
-          <div ref={sectionRefs[5]}>{step>=5 && (
+          <div ref={sectionRefs[1]}>{step>=1 && <PbacMini state={pbac} setState={setPbac} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[2]}>{step>=2 && <BodyMapSimple zones={zones} setZones={setZones} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[3]}>{step>=3 && <SymptomPicker selected={symptoms} setSelected={setSymptoms} disabled={!isEditing} />}</div>
+          <div ref={sectionRefs[4]}>{step>=4 && (
             <>
               <UroInputs value={uro} onChange={setUro} disabled={!isEditing} />
               <BowelInputs value={bowel} onChange={setBowel} disabled={!isEditing} />
             </>
           )}</div>
-          <div ref={sectionRefs[6]}>{step>=6 && (
+          <div ref={sectionRefs[5]}>{step>=5 && (
             <TherapyManager
               list={therapy}
               onChange={setTherapy}
@@ -2640,7 +2703,7 @@ export default function EndoMiniApp() {
               onTookMedsChange={setTookMeds}
             />
           )}</div>
-          <div ref={sectionRefs[7]}>{step>=7 && (
+          <div ref={sectionRefs[6]}>{step>=6 && (
             <SleepScale
               value={sleep}
               onChange={handleSleepChange}
@@ -2650,7 +2713,7 @@ export default function EndoMiniApp() {
               onFirstActivate={()=>setSleepAbsent(null)}
             />
           )}</div>
-          <div ref={sectionRefs[8]}>{step>=8 && (
+          <div ref={sectionRefs[7]}>{step>=7 && (
             <>
               {isoWeekday(activeDate) === 1 && painInterference && (
                 <PainInterferenceMini
