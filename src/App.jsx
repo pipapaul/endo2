@@ -1136,7 +1136,7 @@ function PbacMini({ state, setState, disabled = false }) {
         <Tooltip text={STR.pbacClotHint} />
       </div>
       <div className="mt-3 text-sm">
-        Tages-PBAC (Higham): <span className="font-semibold">{score ?? '–'}</span>
+        Tages-PBAC (Higham): <span className="font-semibold">{isNum(score) ? score : '–'}</span>
       </div>
     </Section>
   )
@@ -1773,7 +1773,10 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
   const within = e => (!range?.from || e.date >= range.from) && (!range?.to || e.date <= range.to)
   const list = entries.filter(within).slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''))
 
-  const pbacSum = list.reduce((s,e)=> s + Number(e?.pbac?.dayScore||0), 0)
+  const pbacValues = list
+    .map(e => (isNum(e?.pbac?.dayScore) ? e.pbac.dayScore : null))
+    .filter(v => v !== null)
+  const pbacSum = pbacValues.length ? pbacValues.reduce((s, v) => s + v, 0) : null
   const painVals = list.map(e => typeof e.nrs==='number'? e.nrs : null).filter(v=>v!==null)
   const meanPain = painVals.length ? (painVals.reduce((a,b)=>a+b,0)/painVals.length).toFixed(1) : '–'
   const peakPain = painVals.length ? Math.max(...painVals) : '–'
@@ -1792,7 +1795,7 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
         <h2 className="text-base font-semibold">Zusammenfassung</h2>
         <ul className="mt-1 list-disc pl-5">
           <li>Durchschnittsschmerz (NRS): <b>{meanPain}</b> · Peak: <b>{peakPain}</b></li>
-          <li>PBAC-Summe (Zeitraum): <b>{pbacSum}</b></li>
+          <li>PBAC-Summe (Zeitraum): <b>{isNum(pbacSum) ? pbacSum : '–'}</b></li>
           <li>Therapie-Tage (Einnahme „Ja“): <b>{list.filter(e=>e.tookMeds===true).length}</b></li>
         </ul>
       </section>
@@ -1801,7 +1804,7 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
         <h2 className="text-base font-semibold">7-Tage Verlauf (Schmerz & PBAC)</h2>
         <div className="mt-2">
           <Sparkline
-            data={last7Days.map(d=>d.nrs)}
+            data={last7Days.map(d=> (isNum(d.nrs) ? d.nrs : 0))}
             mask={last7Days.map(d=>d.period)}
             spottingMask={last7Days.map(d=>d.spotting)}
             starts={last7Days.map(d=>d.start)}
@@ -1823,8 +1826,8 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
           {cycles.slice(0,6).map(c=>(
             <div key={c.start} className="border rounded-lg p-2">
               <div className="text-xs text-gray-600">{c.start} – {c.end}</div>
-              <div className="text-sm">PBAC: <b>{c.pbacSum}</b></div>
-              <div className="text-sm">Median NRS: <b>{c.medianNrs}</b> · Peak: <b>{c.peakNrs}</b></div>
+              <div className="text-sm">PBAC: <b>{isNum(c.pbacSum) ? c.pbacSum : '–'}</b></div>
+              <div className="text-sm">Median NRS: <b>{isNum(c.medianNrs) ? c.medianNrs : '–'}</b> · Peak: <b>{isNum(c.peakNrs) ? c.peakNrs : '–'}</b></div>
               <div className="text-xs text-gray-700">Top-Symptome: {c.topSymptoms?.length? c.topSymptoms.join(', '): '–'}</div>
             </div>
           ))}
@@ -1847,8 +1850,8 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
             {list.slice(-20).map(e=>(
               <tr key={e.id} className="border-b">
                 <td className="py-1 pr-2">{e.date}</td>
-                <td className="py-1 pr-2">{e.nrs ?? '–'}</td>
-                <td className="py-1 pr-2">{e.pbac?.dayScore ?? '–'}{e.pbac?.periodStart?' (Beginn)':''}</td>
+                <td className="py-1 pr-2">{isNum(e.nrs) ? e.nrs : '–'}</td>
+                <td className="py-1 pr-2">{isNum(e.pbac?.dayScore) ? e.pbac.dayScore : '–'}{e.pbac?.periodStart?' (Beginn)':''}</td>
                 <td className="py-1 pr-2">{(e.symptoms||[]).slice().sort((a,b)=>(b.intensity||0)-(a.intensity||0)).slice(0,3).map(s=>s.label).join(', ') || '–'}</td>
                 <td className="py-1">{typeof e.tookMeds==='boolean'?(e.tookMeds?'Ja':'Nein'):'–'}</td>
               </tr>
@@ -1907,7 +1910,8 @@ function CalendarHeatmap({ days }) {
   return (
     <div className="grid grid-cols-7 gap-1" aria-label="Kalender Heatmap">
       {days.map((d,i)=>{
-        const c = d.nrs>=8?'bg-red-600':d.nrs>=5?'bg-red-400':d.nrs>=3?'bg-orange-300':d.nrs>0?'bg-yellow-200':'bg-gray-200'
+        const value = isNum(d?.nrs) ? d.nrs : null
+        const c = value>=8?'bg-red-600':value>=5?'bg-red-400':value>=3?'bg-orange-300':value>0?'bg-yellow-200':'bg-gray-200'
         return (
           <div
             key={i}
@@ -2224,11 +2228,12 @@ export default function EndoMiniApp() {
       const dt = new Date(); dt.setDate(dt.getDate()-i)
       const iso = dt.toISOString().slice(0,10)
       const e = entries.find(x=>x.date===iso)
-      const pbacScore = Number(e?.pbac?.dayScore ?? 0)
+      const nrsValue = isNum(e?.nrs) ? e.nrs : null
+      const pbacValue = isNum(e?.pbac?.dayScore) ? e.pbac.dayScore : null
       arr.push({
         date: iso,
-        nrs: e?.nrs ?? 0,
-        pbac: pbacScore,
+        nrs: nrsValue,
+        pbac: pbacValue,
         period: periodSet.has(iso),
         start: startSet.has(iso),
         spotting: spottingSet.has(iso),
@@ -2243,7 +2248,13 @@ export default function EndoMiniApp() {
       const dt = new Date(); dt.setDate(dt.getDate()-i)
       const iso = dt.toISOString().slice(0,10)
       const e = entries.find(x=>x.date===iso)
-      arr.push({ date: iso, nrs: e?.nrs ?? 0, period: periodSet.has(iso), periodStart: startSet.has(iso), spotting: spottingSet.has(iso) })
+      arr.push({
+        date: iso,
+        nrs: isNum(e?.nrs) ? e.nrs : null,
+        period: periodSet.has(iso),
+        periodStart: startSet.has(iso),
+        spotting: spottingSet.has(iso),
+      })
     }
     return arr
   }, [entries, periodSet, startSet, spottingSet])
@@ -2253,8 +2264,8 @@ export default function EndoMiniApp() {
       const dates = cycle.days.map(d => d.date)
       const relevant = entries.filter(e => dates.includes(e.date))
       const nrsValues = relevant.map(e => (typeof e.nrs === 'number' ? e.nrs : null)).filter(v => v !== null)
-      const medianNrs = nrsValues.length ? Number(median(nrsValues).toFixed(1)) : 0
-      const peakNrs = nrsValues.length ? Math.max(...nrsValues) : 0
+      const medianNrs = nrsValues.length ? Number(median(nrsValues).toFixed(1)) : null
+      const peakNrs = nrsValues.length ? Math.max(...nrsValues) : null
       const symptomMap = new Map()
       relevant.forEach(e => {
         (e.symptoms || []).forEach(s => {
@@ -2590,7 +2601,7 @@ export default function EndoMiniApp() {
         <div>
           <Section title="7-Tage Schmerz & PBAC" hint={STR.pbacLegend}>
             <Sparkline
-              data={last7Days.map(d=>d.nrs)}
+              data={last7Days.map(d=> (isNum(d.nrs) ? d.nrs : 0))}
               mask={last7Days.map(d=>d.period)}
               spottingMask={last7Days.map(d=>d.spotting)}
               starts={last7Days.map(d=>d.start)}
@@ -2606,8 +2617,10 @@ export default function EndoMiniApp() {
                 {cycleSummaries.map(cycle => (
                   <div key={cycle.start} className="border rounded-2xl p-3 bg-white shadow-sm">
                     <div className="text-sm text-gray-600">{cycle.start} – {cycle.end}</div>
-                    <div className="mt-1 font-semibold text-rose-900">{STR.cycleCardPbac}: {cycle.pbacSum}</div>
-                    <div className="mt-1 text-sm">{STR.cycleCardMedian}: {cycle.medianNrs} · {STR.cycleCardPeak}: {cycle.peakNrs}</div>
+                    <div className="mt-1 font-semibold text-rose-900">
+                      {STR.cycleCardPbac}: {isNum(cycle.pbacSum) ? cycle.pbacSum : '–'}
+                    </div>
+                    <div className="mt-1 text-sm">{STR.cycleCardMedian}: {isNum(cycle.medianNrs) ? cycle.medianNrs : '–'} · {STR.cycleCardPeak}: {isNum(cycle.peakNrs) ? cycle.peakNrs : '–'}</div>
                     <div className="mt-1 text-sm text-gray-700">{STR.cycleCardSymptoms}: {cycle.topSymptoms.length ? cycle.topSymptoms.join(', ') : '–'}</div>
                   </div>
                 ))}
@@ -2638,7 +2651,7 @@ export default function EndoMiniApp() {
                   <div>
                     <div className="font-medium">{e.date}</div>
                     <div className="text-sm text-gray-600">
-                      NRS {e.nrs ?? '-'} · PBAC {e.pbac?.dayScore ?? '–'}
+                      NRS {isNum(e.nrs) ? e.nrs : '–'} · PBAC {isNum(e.pbac?.dayScore) ? e.pbac.dayScore : '–'}
                       {e.pbac?.periodStart ? ' · Beginn' : ''}
                       {e.pbac?.cupMl ? ` · Cup ${e.pbac.cupMl} ml` : ''}
                       {e.pbac?.dayScore > 0 && e.pbac.dayScore <= PBAC_RULES.spottingMax ? ` · ${STR.spottingLabel}` : ''}
