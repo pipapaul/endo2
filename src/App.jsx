@@ -243,7 +243,9 @@ const STR = {
 }
 
 function formatPbacDisplay(pbac) {
-  if (!pbac || pbac.absent_reason) return STR.noEntry
+  if (!pbac) return STR.noEntry
+  if (pbac.absent_reason === ABSENT.NOT_APPLICABLE) return STR.noBleeding
+  if (pbac.absent_reason) return STR.noEntry
   const rawScore = pbac?.dayScore
   if (!Number.isFinite(Number(rawScore))) return STR.noEntry
   const score = Math.max(0, Number(rawScore))
@@ -1037,17 +1039,24 @@ function PbacMini({ state, setState, disabled = false }) {
 
   const ensureActive = patch => setState(prev => ({ ...prev, absent_reason: null, ...patch }))
   const markNoBleeding = () =>
-    ensureActive({
-      products: [],
-      clots: 'none',
-      floodingEpisodes: 0,
-      cupMl: 0,
-      periodStart: false,
-      dayScore: 0,
+    setState(prev => {
+      if (prev.absent_reason === ABSENT.NOT_APPLICABLE) {
+        return { ...prev, absent_reason: null }
+      }
+      return {
+        ...prev,
+        products: [],
+        clots: 'none',
+        floodingEpisodes: 0,
+        cupMl: 0,
+        periodStart: false,
+        dayScore: 0,
+        absent_reason: ABSENT.NOT_APPLICABLE,
+      }
     })
   const toggleNoEntry = () =>
     setState(prev =>
-      prev.absent_reason
+      prev.absent_reason === ABSENT.ASKED_DECLINED
         ? { ...prev, absent_reason: null }
         : {
             ...prev,
@@ -1107,10 +1116,18 @@ function PbacMini({ state, setState, disabled = false }) {
     >
       <div className="mb-2">
         <div className="mb-2 flex flex-wrap gap-2">
-          <Chip active={!absentReason && score === 0} onClick={markNoBleeding} disabled={disabled}>
+          <Chip
+            active={absentReason === ABSENT.NOT_APPLICABLE || (!absentReason && score === 0)}
+            onClick={markNoBleeding}
+            disabled={disabled}
+          >
             {STR.noBleeding}
           </Chip>
-          <Chip active={!!absentReason} onClick={toggleNoEntry} disabled={disabled}>
+          <Chip
+            active={absentReason === ABSENT.ASKED_DECLINED}
+            onClick={toggleNoEntry}
+            disabled={disabled}
+          >
             {STR.noEntry}
           </Chip>
         </div>
