@@ -290,28 +290,28 @@ const PROMIS_FATIGUE_ITEMS = [
 
 const DEFAULT_SUB_NRS = {
   dyspareunia: {
-    nrs: 0,
+    nrs: null,
     timing: { during: false, after: false },
     location: { superficial: false, deep: false },
     avoidance: false,
   },
-  dysuria: 0,
-  dyschezia: 0,
+  dysuria: null,
+  dyschezia: null,
 }
 
 const DEFAULT_PBAC = { products: [], clots: 'none', floodingEpisodes: 0, cupMl: 0, dayScore: 0, periodStart: false }
 
 const DEFAULT_PAIN_INTERFERENCE = date => ({
   date,
-  peg3: { pain: 0, enjoyment: 0, activity: 0 },
+  peg3: { pain: null, enjoyment: null, activity: null },
   rawSum: 0,
 })
 
 const DEFAULT_PROMIS = date => ({
   date,
-  sleep4a: [0, 0, 0, 0],
+  sleep4a: [null, null, null, null],
   sleep4aRaw: 0,
-  fatigue4a: [0, 0, 0, 0],
+  fatigue4a: [null, null, null, null],
   fatigue4aRaw: 0,
 })
 
@@ -359,12 +359,27 @@ function normalizePbac(raw) {
   return { ...base, products, clots, floodingEpisodes, cupMl, periodStart, dayScore }
 }
 
+const coerceNumber = v => {
+  if (typeof v === 'number') return v
+  if (typeof v === 'string' && v.trim() !== '') {
+    const num = Number(v)
+    if (Number.isFinite(num)) return num
+  }
+  return null
+}
+
+const sumNumbers = values => values.filter(isNum).reduce((total, current) => total + current, 0)
+
 function normalizeSubNrs(raw) {
   const base = JSON.parse(JSON.stringify(DEFAULT_SUB_NRS))
   if (!raw) return base
+  const rawDyspareunia = raw.dyspareunia
+  const rawDyspareuniaNrs =
+    rawDyspareunia && typeof rawDyspareunia === 'object' ? rawDyspareunia.nrs : rawDyspareunia
+  const dyspareuniaNrs = coerceNumber(rawDyspareuniaNrs)
   return {
     dyspareunia: {
-      nrs: clamp(Number(raw.dyspareunia?.nrs ?? raw.dyspareunia ?? 0), 0, 10),
+      nrs: isNum(dyspareuniaNrs) ? clamp(dyspareuniaNrs, 0, 10) : null,
       timing: {
         during: !!(raw.dyspareunia?.timing?.during),
         after: !!(raw.dyspareunia?.timing?.after),
@@ -375,8 +390,14 @@ function normalizeSubNrs(raw) {
       },
       avoidance: !!(raw.dyspareunia?.avoidance),
     },
-    dysuria: clamp(Number(raw.dysuria ?? 0), 0, 10),
-    dyschezia: clamp(Number(raw.dyschezia ?? 0), 0, 10),
+    dysuria: (() => {
+      const n = coerceNumber(raw.dysuria)
+      return isNum(n) ? clamp(n, 0, 10) : null
+    })(),
+    dyschezia: (() => {
+      const n = coerceNumber(raw.dyschezia)
+      return isNum(n) ? clamp(n, 0, 10) : null
+    })(),
   }
 }
 
@@ -384,12 +405,16 @@ function normalizePainInterference(raw, date) {
   if (!raw && !date) return null
   const source = raw || {}
   const peg = source.peg3 || {}
-  const nextPeg = {
-    pain: clamp(Number(peg.pain ?? 0), 0, 10),
-    enjoyment: clamp(Number(peg.enjoyment ?? 0), 0, 10),
-    activity: clamp(Number(peg.activity ?? 0), 0, 10),
+  const clampPeg = field => {
+    const n = coerceNumber(peg[field])
+    return isNum(n) ? clamp(n, 0, 10) : null
   }
-  const rawSum = nextPeg.pain + nextPeg.enjoyment + nextPeg.activity
+  const nextPeg = {
+    pain: clampPeg('pain'),
+    enjoyment: clampPeg('enjoyment'),
+    activity: clampPeg('activity'),
+  }
+  const rawSum = sumNumbers([nextPeg.pain, nextPeg.enjoyment, nextPeg.activity])
   const nextDate = source.date || date
   return nextDate ? { date: nextDate, peg3: nextPeg, rawSum } : null
 }
@@ -397,14 +422,18 @@ function normalizePainInterference(raw, date) {
 function normalizePromis(raw, date) {
   if (!raw && !date) return null
   const src = raw || {}
-  const sleep = Array.isArray(src.sleep4a) ? src.sleep4a.slice(0, 4) : [0, 0, 0, 0]
-  while (sleep.length < 4) sleep.push(0)
-  const fatigue = Array.isArray(src.fatigue4a) ? src.fatigue4a.slice(0, 4) : [0, 0, 0, 0]
-  while (fatigue.length < 4) fatigue.push(0)
-  const sleep4a = sleep.map(v => clamp(Number(v || 0), 0, 5))
-  const fatigue4a = fatigue.map(v => clamp(Number(v || 0), 0, 5))
-  const sleep4aRaw = sleep4a.reduce((a, b) => a + b, 0)
-  const fatigue4aRaw = fatigue4a.reduce((a, b) => a + b, 0)
+  const toLikertArray = arr => {
+    const values = Array.isArray(arr) ? arr.slice(0, 4) : []
+    while (values.length < 4) values.push(null)
+    return values.map(v => {
+      const n = coerceNumber(v)
+      return isNum(n) ? clamp(n, 1, 5) : null
+    })
+  }
+  const sleep4a = toLikertArray(src.sleep4a)
+  const fatigue4a = toLikertArray(src.fatigue4a)
+  const sleep4aRaw = sumNumbers(sleep4a)
+  const fatigue4aRaw = sumNumbers(fatigue4a)
   const nextDate = src.date || date
   return nextDate ? { date: nextDate, sleep4a, sleep4aRaw, fatigue4a, fatigue4aRaw } : null
 }
@@ -1139,7 +1168,7 @@ function PainDetails({ value, onChange, disabled = false }) {
           <div className="mb-4">
           <div className="mb-2 flex items-center gap-2">
             <span className="text-sm font-medium">
-              {STR.dyspareuniaLabel}: <b>{dysp.nrs}</b>
+              {STR.dyspareuniaLabel}: <b>{isNum(dysp.nrs) ? dysp.nrs : '–'}</b>
             </span>
             <Tooltip text={STR.dyspareuniaHint} />
           </div>
@@ -1161,7 +1190,7 @@ function PainDetails({ value, onChange, disabled = false }) {
           <div className="mb-4">
           <div className="mb-2 flex items-center gap-2">
             <span className="text-sm font-medium">
-              {STR.dysuriaLabel}: <b>{value.dysuria}</b>
+              {STR.dysuriaLabel}: <b>{isNum(value.dysuria) ? value.dysuria : '–'}</b>
             </span>
             <Tooltip text={STR.dysuriaHint} />
           </div>
@@ -1170,7 +1199,7 @@ function PainDetails({ value, onChange, disabled = false }) {
           <div>
           <div className="mb-2 flex items-center gap-2">
             <span className="text-sm font-medium">
-              {STR.dyscheziaLabel}: <b>{value.dyschezia}</b>
+              {STR.dyscheziaLabel}: <b>{isNum(value.dyschezia) ? value.dyschezia : '–'}</b>
             </span>
             <Tooltip text={STR.dyscheziaHint} />
           </div>
@@ -1188,22 +1217,22 @@ function PainInterferenceMini({ value, onChange, disabled = false, date, titleOv
   const update = (field, val) => {
     if (disabled) return
     const nextPeg = { ...peg, [field]: val }
-    const rawSum = nextPeg.pain + nextPeg.enjoyment + nextPeg.activity
+    const rawSum = sumNumbers([nextPeg.pain, nextPeg.enjoyment, nextPeg.activity])
     onChange({ date, peg3: nextPeg, rawSum })
   }
   return (
     <Section title={titleOverride || STR.painInterferenceTitle} hint={`${STR.pegHint} ${STR.weekliesInfo}`}>
       <div className="space-y-4">
         <div>
-          <div className="text-sm font-medium mb-1">{STR.pegPain}: <b>{peg.pain}</b></div>
+          <div className="text-sm font-medium mb-1">{STR.pegPain}: <b>{isNum(peg.pain) ? peg.pain : '–'}</b></div>
           <Range value={peg.pain} onChange={v => update('pain', v)} aria={STR.pegPain} disabled={disabled} />
         </div>
         <div>
-          <div className="text-sm font-medium mb-1">{STR.pegEnjoyment}: <b>{peg.enjoyment}</b></div>
+          <div className="text-sm font-medium mb-1">{STR.pegEnjoyment}: <b>{isNum(peg.enjoyment) ? peg.enjoyment : '–'}</b></div>
           <Range value={peg.enjoyment} onChange={v => update('enjoyment', v)} aria={STR.pegEnjoyment} disabled={disabled} />
         </div>
         <div>
-          <div className="text-sm font-medium mb-1">{STR.pegActivity}: <b>{peg.activity}</b></div>
+          <div className="text-sm font-medium mb-1">{STR.pegActivity}: <b>{isNum(peg.activity) ? peg.activity : '–'}</b></div>
           <Range value={peg.activity} onChange={v => update('activity', v)} aria={STR.pegActivity} disabled={disabled} />
         </div>
         <div className="text-sm">Summe (PEG-3): <span className="font-semibold">{value.rawSum}</span></div>
@@ -1214,17 +1243,23 @@ function PainInterferenceMini({ value, onChange, disabled = false, date, titleOv
 }
 
 function PromisWeeklyMini({ value, onChange, disabled = false, date, titleOverride }) {
-  const [showFatigue, setShowFatigue] = useState(() => !!(value && value.fatigue4aRaw > 0))
+  const [showFatigue, setShowFatigue] = useState(() => !!(value?.fatigue4a?.some(isNum)))
   useEffect(() => {
-    if (value?.fatigue4aRaw > 0) setShowFatigue(true)
-  }, [value?.fatigue4aRaw])
+    if (value?.fatigue4a?.some(isNum)) setShowFatigue(true)
+  }, [value?.fatigue4a])
   if (!value || !date) return null
 
   const handleToggleFatigue = () => {
     if (disabled) return
     if (showFatigue) {
       setShowFatigue(false)
-      onChange({ date, sleep4a: value.sleep4a, sleep4aRaw: value.sleep4aRaw, fatigue4a: [0, 0, 0, 0], fatigue4aRaw: 0 })
+      onChange({
+        date,
+        sleep4a: value.sleep4a,
+        sleep4aRaw: value.sleep4aRaw,
+        fatigue4a: [null, null, null, null],
+        fatigue4aRaw: 0,
+      })
     } else {
       setShowFatigue(true)
     }
@@ -1234,7 +1269,7 @@ function PromisWeeklyMini({ value, onChange, disabled = false, date, titleOverri
     if (disabled) return
     const arr = type === 'sleep' ? value.sleep4a.slice() : value.fatigue4a.slice()
     arr[index] = val
-    const raw = arr.reduce((a, b) => a + b, 0)
+    const raw = sumNumbers(arr)
     if (type === 'sleep') {
       onChange({ date, sleep4a: arr, sleep4aRaw: raw, fatigue4a: value.fatigue4a, fatigue4aRaw: value.fatigue4aRaw })
     } else {
