@@ -244,8 +244,9 @@ const STR = {
 
 function formatPbacDisplay(pbac) {
   if (!pbac || pbac.absent_reason) return STR.noEntry
-  const score = pbac?.dayScore
-  if (!isNum(score)) return STR.noEntry
+  const rawScore = pbac?.dayScore
+  if (!Number.isFinite(Number(rawScore))) return STR.noEntry
+  const score = Math.max(0, Number(rawScore))
   if (score === 0) return STR.noBleeding
   return score
 }
@@ -715,7 +716,9 @@ function buildPeriodFlags(entries, rules = PBAC_RULES) {
   const spottingSet = new Set()
 
   entries.forEach(e => {
-    const pbac = Number(e?.pbac?.dayScore ?? 0)
+    const raw = e?.pbac?.dayScore
+    if (!Number.isFinite(Number(raw))) return
+    const pbac = Math.max(0, Number(raw))
     if (pbac > 0 && pbac <= rules.spottingMax) spottingSet.add(e.date)
   })
 
@@ -1791,10 +1794,12 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
   const within = e => (!range?.from || e.date >= range.from) && (!range?.to || e.date <= range.to)
   const list = entries.filter(within).slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''))
 
-  const pbacValues = list
-    .map(e => (isNum(e?.pbac?.dayScore) ? e.pbac.dayScore : null))
-    .filter(v => v !== null)
-  const pbacSum = pbacValues.length ? pbacValues.reduce((s, v) => s + v, 0) : null
+  const pbacSumTotal = list.reduce(
+    (s, e) => s + (Number.isFinite(Number(e?.pbac?.dayScore)) ? Number(e.pbac.dayScore) : 0),
+    0,
+  )
+  const hasPbacValues = list.some(e => Number.isFinite(Number(e?.pbac?.dayScore)))
+  const pbacSum = hasPbacValues ? pbacSumTotal : null
   const painVals = list.map(e => typeof e.nrs==='number'? e.nrs : null).filter(v=>v!==null)
   const meanPain = painVals.length ? (painVals.reduce((a,b)=>a+b,0)/painVals.length).toFixed(1) : '–'
   const peakPain = painVals.length ? Math.max(...painVals) : '–'
@@ -2250,7 +2255,9 @@ export default function EndoMiniApp() {
       const iso = dt.toISOString().slice(0,10)
       const e = entries.find(x=>x.date===iso)
       const nrsValue = isNum(e?.nrs) ? e.nrs : null
-      const pbacValue = isNum(e?.pbac?.dayScore) ? e.pbac.dayScore : null
+      const pbacValue = Number.isFinite(Number(e?.pbac?.dayScore))
+        ? Math.max(0, Number(e.pbac.dayScore))
+        : null
       arr.push({
         date: iso,
         nrs: nrsValue,
