@@ -299,7 +299,15 @@ const DEFAULT_SUB_NRS = {
   dyschezia: null,
 }
 
-const DEFAULT_PBAC = { products: [], clots: 'none', floodingEpisodes: 0, cupMl: 0, dayScore: 0, periodStart: false }
+const DEFAULT_PBAC = {
+  products: [],
+  clots: 'none',
+  floodingEpisodes: 0,
+  cupMl: 0,
+  dayScore: null,
+  periodStart: false,
+  absent_reason: ABSENT.NOT_ASKED,
+}
 
 const DEFAULT_PAIN_INTERFERENCE = date => ({
   date,
@@ -319,7 +327,7 @@ const DEFAULT_URO = { urinationFrequency: '0', urgency: false, urgencyFrequency:
 const DEFAULT_BOWEL = { bowelFrequency: '0', bristol: 0 }
 
 function computePbacDayScore(pbac) {
-  if (!pbac) return 0
+  if (!pbac || pbac.absent_reason) return null
   const products = Array.isArray(pbac.products) ? pbac.products : []
   const levelIndex = { light: 0, medium: 1, heavy: 2 }
   let total = 0
@@ -355,8 +363,18 @@ function normalizePbac(raw) {
   const cupMl = clamp(Math.round(Number(raw.cupMl) || 0), 0, 120)
   const clots = ['none', 'small', 'large'].includes(raw.clots) ? raw.clots : 'none'
   const periodStart = !!raw.periodStart
-  const dayScore = computePbacDayScore({ products, clots, floodingEpisodes })
-  return { ...base, products, clots, floodingEpisodes, cupMl, periodStart, dayScore }
+  const absentReason = raw.absent_reason ?? null
+  const dayScore = computePbacDayScore({ products, clots, floodingEpisodes, absent_reason: absentReason })
+  return {
+    ...base,
+    products,
+    clots,
+    floodingEpisodes,
+    cupMl,
+    periodStart,
+    dayScore,
+    absent_reason: absentReason,
+  }
 }
 
 const coerceNumber = v => {
@@ -908,9 +926,22 @@ const PBAC_RULES = {
 }
 
 function PbacMini({ state, setState, disabled = false }) {
-  const { products = [], clots = 'none', floodingEpisodes = 0, cupMl = 0 } = state
-  const safeEpisodes = clamp(Number.isFinite(Number(floodingEpisodes)) ? Number(floodingEpisodes) : 0, 0, PBAC_RULES.maxFloodingEpisodesPerDay)
-  const score = useMemo(() => computePbacDayScore({ products, clots, floodingEpisodes: safeEpisodes }), [products, clots, safeEpisodes])
+  const {
+    products = [],
+    clots = 'none',
+    floodingEpisodes = 0,
+    cupMl = 0,
+    absent_reason: absentReason,
+  } = state
+  const safeEpisodes = clamp(
+    Number.isFinite(Number(floodingEpisodes)) ? Number(floodingEpisodes) : 0,
+    0,
+    PBAC_RULES.maxFloodingEpisodesPerDay,
+  )
+  const score = useMemo(
+    () => (absentReason ? null : computePbacDayScore({ products, clots, floodingEpisodes: safeEpisodes })),
+    [absentReason, products, clots, safeEpisodes],
+  )
 
   useEffect(() => {
     setState(prev => {
@@ -922,20 +953,49 @@ function PbacMini({ state, setState, disabled = false }) {
   }, [score, safeEpisodes, setState])
 
   const updateProduct = (kind, fill) => {
-    const list = products.filter(p => p.kind !== kind)
-    setState({ ...state, products: [...list, { kind, fill }] })
+    setState(prev => {
+      const list = (prev.products || []).filter(p => p.kind !== kind)
+      return { ...prev, products: [...list, { kind, fill }], absent_reason: null }
+    })
   }
 
   const updateCup = value => {
     const v = clamp(Math.round(Number(value) || 0), 0, 120)
-    setState({ ...state, cupMl: v })
+    setState(prev => ({ ...prev, cupMl: v, absent_reason: null }))
   }
 
   const adjustEpisodes = delta => {
     if (disabled) return
-    const next = clamp(safeEpisodes + delta, 0, PBAC_RULES.maxFloodingEpisodesPerDay)
-    setState({ ...state, floodingEpisodes: next })
+    setState(prev => {
+      const current = Number.isFinite(Number(prev.floodingEpisodes)) ? Number(prev.floodingEpisodes) : 0
+      const next = clamp(current + delta, 0, PBAC_RULES.maxFloodingEpisodesPerDay)
+      return { ...prev, floodingEpisodes: next, absent_reason: null }
+    })
   }
+
+  const togglePeriodStart = () => {
+    setState(prev => ({ ...prev, periodStart: !prev.periodStart, absent_reason: null }))
+  }
+
+  const toggleAbsent = () => {
+    if (disabled) return
+    setState(prev => {
+      if (prev.absent_reason) {
+        return { ...prev, absent_reason: null }
+      }
+      return {
+        ...prev,
+        products: [],
+        clots: 'none',
+        floodingEpisodes: 0,
+        cupMl: 0,
+        periodStart: false,
+        dayScore: null,
+        absent_reason: ABSENT.ASKED_DECLINED,
+      }
+    })
+  }
+  const toggleLabel = absentReason ? 'Erfassung aktivieren' : 'Nicht erfassen'
 
   const ProdRow = ({ kind, label }) => {
     const current = products.find(p => p.kind === kind)?.fill || 'light'
@@ -964,9 +1024,25 @@ function PbacMini({ state, setState, disabled = false }) {
   }
 
   return (
-    <Section title={STR.pbacTitle} hint={STR.pbacHint} right={<Tooltip text={`${STR.pbacGuide} ${STR.pbacCupNote}`} />}>
+    <Section
+      title={STR.pbacTitle}
+      hint={STR.pbacHint}
+      right={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="text-sm text-rose-700 underline disabled:opacity-50 disabled:pointer-events-none"
+            onClick={toggleAbsent}
+            disabled={disabled}
+          >
+            {toggleLabel}
+          </button>
+          <Tooltip text={`${STR.pbacGuide} ${STR.pbacCupNote}`} />
+        </div>
+      }
+    >
       <div className="mb-2">
-        <Chip active={!!state.periodStart} onClick={() => setState({ ...state, periodStart: !state.periodStart })} disabled={disabled}>
+        <Chip active={!!state.periodStart} onClick={() => !disabled && togglePeriodStart()} disabled={disabled}>
           {STR.periodStart}
         </Chip>
       </div>
@@ -1023,14 +1099,20 @@ function PbacMini({ state, setState, disabled = false }) {
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Chip
           active={clots === 'small'}
-          onClick={() => setState({ ...state, clots: clots === 'small' ? 'none' : 'small' })}
+          onClick={() =>
+            !disabled &&
+            setState(prev => ({ ...prev, clots: prev.clots === 'small' ? 'none' : 'small', absent_reason: null }))
+          }
           disabled={disabled}
         >
           {STR.pbacClotSmall}
         </Chip>
         <Chip
           active={clots === 'large'}
-          onClick={() => setState({ ...state, clots: clots === 'large' ? 'none' : 'large' })}
+          onClick={() =>
+            !disabled &&
+            setState(prev => ({ ...prev, clots: prev.clots === 'large' ? 'none' : 'large', absent_reason: null }))
+          }
           disabled={disabled}
         >
           {STR.pbacClotLarge}
@@ -1038,7 +1120,7 @@ function PbacMini({ state, setState, disabled = false }) {
         <Tooltip text={STR.pbacClotHint} />
       </div>
       <div className="mt-3 text-sm">
-        Tages-PBAC (Higham): <span className="font-semibold">{score}</span>
+        Tages-PBAC (Higham): <span className="font-semibold">{score ?? '–'}</span>
       </div>
     </Section>
   )
@@ -1750,7 +1832,7 @@ function ReportView({ range, entries, cycles, last7Days, last30 }) {
               <tr key={e.id} className="border-b">
                 <td className="py-1 pr-2">{e.date}</td>
                 <td className="py-1 pr-2">{e.nrs ?? '–'}</td>
-                <td className="py-1 pr-2">{e.pbac?.dayScore ?? 0}{e.pbac?.periodStart?' (Beginn)':''}</td>
+                <td className="py-1 pr-2">{e.pbac?.dayScore ?? '–'}{e.pbac?.periodStart?' (Beginn)':''}</td>
                 <td className="py-1 pr-2">{(e.symptoms||[]).slice().sort((a,b)=>(b.intensity||0)-(a.intensity||0)).slice(0,3).map(s=>s.label).join(', ') || '–'}</td>
                 <td className="py-1">{typeof e.tookMeds==='boolean'?(e.tookMeds?'Ja':'Nein'):'–'}</td>
               </tr>
@@ -2025,7 +2107,16 @@ export default function EndoMiniApp() {
     const weekday = isoWeekday(activeDate)
     setNrs(0)
     setNrsAbsent(null)
-    setPbac(normalizePbac(null))
+    setPbac(
+      normalizePbac({
+        products: [],
+        clots: 'none',
+        floodingEpisodes: 0,
+        cupMl: 0,
+        periodStart: false,
+        absent_reason: null,
+      }),
+    )
     setZones([])
     setSymptoms([])
     setTherapy([])
@@ -2349,7 +2440,16 @@ export default function EndoMiniApp() {
                   setStep(0)
                   setNrs(null)
                   setNrsAbsent(ABSENT.NOT_ASKED)
-                  setPbac({ products: [], clots:'none', floodingEpisodes:0, dayScore:0, periodStart:false })
+                  setPbac(
+                    normalizePbac({
+                      products: [],
+                      clots: 'none',
+                      floodingEpisodes: 0,
+                      cupMl: 0,
+                      periodStart: false,
+                      absent_reason: null,
+                    }),
+                  )
                 }}
               >
                 {STR.quickOnly}
@@ -2511,7 +2611,7 @@ export default function EndoMiniApp() {
                   <div>
                     <div className="font-medium">{e.date}</div>
                     <div className="text-sm text-gray-600">
-                      NRS {e.nrs ?? '-'} · PBAC {e.pbac?.dayScore ?? 0}
+                      NRS {e.nrs ?? '-'} · PBAC {e.pbac?.dayScore ?? '–'}
                       {e.pbac?.periodStart ? ' · Beginn' : ''}
                       {e.pbac?.cupMl ? ` · Cup ${e.pbac.cupMl} ml` : ''}
                       {e.pbac?.dayScore > 0 && e.pbac.dayScore <= PBAC_RULES.spottingMax ? ` · ${STR.spottingLabel}` : ''}
