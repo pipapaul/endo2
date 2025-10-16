@@ -982,6 +982,7 @@ function PbacMini({ state, setState, disabled = false }) {
 
   useEffect(() => {
     setState(prev => {
+      if (prev.absent_reason) return prev
       const changedScore = prev.dayScore !== score
       const changedEpisodes = prev.floodingEpisodes !== safeEpisodes
       if (!changedScore && !changedEpisodes) return prev
@@ -998,7 +999,7 @@ function PbacMini({ state, setState, disabled = false }) {
 
   const updateCup = value => {
     const v = clamp(Math.round(Number(value) || 0), 0, 120)
-    setState(prev => ({ ...prev, cupMl: v, absent_reason: null }))
+    ensureActive({ cupMl: v })
   }
 
   const adjustEpisodes = delta => {
@@ -1033,6 +1034,32 @@ function PbacMini({ state, setState, disabled = false }) {
     })
   }
   const toggleLabel = absentReason ? 'Erfassung aktivieren' : 'Nicht erfassen'
+
+  const ensureActive = patch => setState(prev => ({ ...prev, absent_reason: null, ...patch }))
+  const markNoBleeding = () =>
+    ensureActive({
+      products: [],
+      clots: 'none',
+      floodingEpisodes: 0,
+      cupMl: 0,
+      periodStart: false,
+      dayScore: 0,
+    })
+  const toggleNoEntry = () =>
+    setState(prev =>
+      prev.absent_reason
+        ? { ...prev, absent_reason: null }
+        : {
+            ...prev,
+            products: [],
+            clots: 'none',
+            floodingEpisodes: 0,
+            cupMl: 0,
+            periodStart: false,
+            dayScore: null,
+            absent_reason: ABSENT.ASKED_DECLINED,
+          },
+    )
 
   const ProdRow = ({ kind, label }) => {
     const current = products.find(p => p.kind === kind)?.fill || 'light'
@@ -1079,12 +1106,21 @@ function PbacMini({ state, setState, disabled = false }) {
       }
     >
       <div className="mb-2">
+        <div className="mb-2 flex flex-wrap gap-2">
+          <Chip active={!absentReason && score === 0} onClick={markNoBleeding} disabled={disabled}>
+            {STR.noBleeding}
+          </Chip>
+          <Chip active={!!absentReason} onClick={toggleNoEntry} disabled={disabled}>
+            {STR.noEntry}
+          </Chip>
+        </div>
         <Chip active={!!state.periodStart} onClick={() => !disabled && togglePeriodStart()} disabled={disabled}>
           {STR.periodStart}
         </Chip>
       </div>
-      <ProdRow kind="pad" label="Binde" />
-      <ProdRow kind="tampon" label="Tampon" />
+      <fieldset disabled={disabled || !!absentReason}>
+        <ProdRow kind="pad" label="Binde" />
+        <ProdRow kind="tampon" label="Tampon" />
       <div className="mb-2">
         <div className="text-sm flex items-center justify-between gap-2">
           <span>{STR.pbacCupLabel}</span>
@@ -1100,7 +1136,7 @@ function PbacMini({ state, setState, disabled = false }) {
             className="w-28 border rounded-xl px-3 py-2"
             value={cupMl ?? 0}
             onChange={e => updateCup(e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !!absentReason}
           />
         </div>
       </div>
@@ -1115,7 +1151,7 @@ function PbacMini({ state, setState, disabled = false }) {
             aria-label="Flooding verringern"
             className="w-8 h-8 rounded-full border bg-white disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-rose-400"
             onClick={() => adjustEpisodes(-1)}
-            disabled={disabled || safeEpisodes <= 0}
+            disabled={disabled || !!absentReason || safeEpisodes <= 0}
           >
             −
           </button>
@@ -1127,7 +1163,7 @@ function PbacMini({ state, setState, disabled = false }) {
             aria-label="Flooding erhöhen"
             className="w-8 h-8 rounded-full border bg-white disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-rose-400"
             onClick={() => adjustEpisodes(1)}
-            disabled={disabled || safeEpisodes >= PBAC_RULES.maxFloodingEpisodesPerDay}
+            disabled={disabled || !!absentReason || safeEpisodes >= PBAC_RULES.maxFloodingEpisodesPerDay}
           >
             +
           </button>
@@ -1140,7 +1176,7 @@ function PbacMini({ state, setState, disabled = false }) {
             !disabled &&
             setState(prev => ({ ...prev, clots: prev.clots === 'small' ? 'none' : 'small', absent_reason: null }))
           }
-          disabled={disabled}
+          disabled={disabled || !!absentReason}
         >
           {STR.pbacClotSmall}
         </Chip>
@@ -1150,12 +1186,13 @@ function PbacMini({ state, setState, disabled = false }) {
             !disabled &&
             setState(prev => ({ ...prev, clots: prev.clots === 'large' ? 'none' : 'large', absent_reason: null }))
           }
-          disabled={disabled}
+          disabled={disabled || !!absentReason}
         >
           {STR.pbacClotLarge}
         </Chip>
         <Tooltip text={STR.pbacClotHint} />
       </div>
+      </fieldset>
       <div className="mt-3 text-sm">
         Tages-PBAC (Higham): <span className="font-semibold">{scoreLabel}</span>
       </div>
