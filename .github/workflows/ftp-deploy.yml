@@ -14,54 +14,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node (no cache -> no lockfile needed)
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install
-        run: npm install
+      - name: Install dependencies
+        run: npm install            # kein npm ci -> keine Lockfile nötig
 
-      # Vite muss mit base=/endolemon/ bauen (idealerweise fix im Repo in vite.config.js)
-      - name: Build (Vite with base=/endolemon/)
-        run: |
-          # falls base nicht gepflegt ist, setzen wir sie einmalig für den Build
-          if [ -f vite.config.js ]; then
-            if grep -q "base:" vite.config.js; then
-              sed -i 's/base: *["'\''][^"'\'']*["'\'']\s*,/base: "\/endolemon\/",/' vite.config.js
-            else
-              sed -i 's/defineConfig({/defineConfig({ base: "\/endolemon\/",/' vite.config.js
-            fi
-          else
-            echo 'import { defineConfig } from "vite"; export default defineConfig({ base: "/endolemon/", build:{ outDir:"dist" } });' > vite.config.js
-          fi
-          npm run build
+      - name: Build (Vite)
+        run: npm run build
 
-      # nur für SPA-Deep-Links nötig (z. B. /endolemon/settings)
-      - name: Add .htaccess for SPA routes (optional but recommended)
-        run: |
-          cat > dist/.htaccess <<'EOF'
-          RewriteEngine On
-          RewriteBase /endolemon/
-          RewriteRule ^index\.html$ - [L]
-          RewriteCond %{REQUEST_FILENAME} !-f
-          RewriteCond %{REQUEST_FILENAME} !-d
-          RewriteRule . /endolemon/index.html [L]
-          EOF
+      - name: SPA fallback (404 -> index)
+        run: cp dist/index.html dist/404.html || true
 
+      # ===================== VARIANTE A: EXPLIZITES FTPS (empfohlen) =====================
       - name: Deploy via FTPS (explicit, port 21)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server:     ${{ secrets.FTP_HOST }}
           username:   ${{ secrets.FTP_USERNAME }}
           password:   ${{ secrets.FTP_PASSWORD }}
-          protocol:   ftps
-          port:       21
-          local-dir:  dist/
-          server-dir: ./                 # FTP-Account startet bereits in /endolemon
-          security:   loose
-          timeout:    60000
-          log-level:  verbose
+          protocol:   ftps            # explizites FTPS über Port 21
+          port:       ${{ secrets.FTP_PORT || 21 }}
+          local-dir:  dist/           # MUSS mit / enden
+          # server-dir: ./            # (Root; Standard ist ./; bei Bedarf explizit setzen)
+          security:   loose           # lockert TLS-Zert-Checks; bei sauberen Certs auf 'strict' stellen
+          timeout:    60000           # robustere Zeitouts für trägere Hoster
+          log-level:  verbose         # mehr Log für Diagnose
           exclude: |
             **/.git*
             **/.github/**
@@ -70,4 +50,28 @@ jobs:
             **/package*.json
             **/yarn.lock
             **/pnpm-lock.yaml
-            **/*.map
+
+      # ===================== VARIANTE B: IMPLIZITES FTPS (Port 990) =====================
+      # Falls dein Hoster FTPS *implizit* nutzt (klassisch Port 990), nimm diese Variante
+      # und kommentiere Variante A aus.
+      # - name: Deploy via FTPS (implicit, port 990)
+      #   uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      #   with:
+      #     server:     ${{ secrets.FTP_HOST }}
+      #     username:   ${{ secrets.FTP_USERNAME }}
+      #     password:   ${{ secrets.FTP_PASSWORD }}
+      #     protocol:   ftps-legacy    # implizites FTPS (siehe Doku)
+      #     port:       ${{ secrets.FTP_PORT || 990 }}
+      #     local-dir:  dist/
+      #     # server-dir: ./
+      #     security:   loose
+      #     timeout:    60000
+      #     log-level:  verbose
+      #     exclude: |
+      #       **/.git*
+      #       **/.github/**
+      #       node_modules/**
+      #       **/README.md
+      #       **/package*.json
+      #       **/yarn.lock
+      #       **/pnpm-lock.yaml
