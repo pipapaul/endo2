@@ -623,10 +623,11 @@ function detectCycles(entries, rules = PBAC_RULES) {
 
   sorted.forEach(entry => {
     const date = entry.date
-    const pbacRaw = Number(entry?.pbac?.dayScore ?? 0)
-    const pbac = Number.isFinite(pbacRaw) ? Math.max(0, pbacRaw) : 0
-    const spotting = pbac > 0 && pbac <= rules.spottingMax
-    const bleeding = pbac >= rules.bleedingMin
+    const raw = entry?.pbac?.dayScore
+    const isMissing = raw == null || !Number.isFinite(Number(raw))
+    const pbac = isMissing ? null : Math.max(0, Number(raw))
+    const spotting = pbac != null && pbac > 0 && pbac <= rules.spottingMax
+    const bleeding = pbac != null && pbac >= rules.bleedingMin
 
     if (prevDate) {
       const gap = isoDiffDays(date, prevDate)
@@ -638,7 +639,12 @@ function detectCycles(entries, rules = PBAC_RULES) {
       }
     }
 
-    if (pbac === 0) {
+    if (isMissing) {
+      finalize()
+      zeroStreak = rules.minZerosBeforeNewBleed
+      positiveRun = false
+      runZerosBefore = zeroStreak
+    } else if (pbac === 0) {
       zeroStreak += 1
       positiveRun = false
       runZerosBefore = zeroStreak
