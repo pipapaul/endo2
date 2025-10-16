@@ -164,8 +164,6 @@ const STR = {
   noEntry: 'Keine Angabe',
   calendarHint: 'Farbe = Schmerzintensität; Punkt = Beginn, Balken = Periode; Linie = Spotting.',
   spottingLabel: 'Spotting',
-  moreDetails: 'Weitere Details',
-  lessDetails: 'Details ausblenden',
   subNrsTitle: 'Schmerz-Details',
   dyspareuniaLabel: 'Dyspareunie',
   dyspareuniaHint: 'Schmerzen beim Sex (0–10).',
@@ -929,18 +927,11 @@ function NrsSlider({
   detailsValue,
   onDetailsChange,
 }) {
-  const [detailsOpen, setDetailsOpen] = useState(false)
   const displayValue = Number.isFinite(value) ? value : '–'
   const toggleLabel = absentReason ? 'Erfassung aktivieren' : 'Nicht erfassen'
   const canAccessDetails = Number.isFinite(value) && value > 0
   const detailsDisabled = disabled || !canAccessDetails
   const showDetails = detailsValue && typeof onDetailsChange === 'function'
-
-  useEffect(() => {
-    if (detailsDisabled) {
-      setDetailsOpen(false)
-    }
-  }, [detailsDisabled])
 
   const dysp = detailsValue?.dyspareunia ?? DEFAULT_SUB_NRS.dyspareunia
   const toggleTiming = key => {
@@ -1009,21 +1000,13 @@ function NrsSlider({
       </div>
       {showDetails && (
         <div className="mt-4 border-t border-rose-100 pt-3">
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex items-center">
             <h3 className="text-base font-semibold text-rose-900">{STR.subNrsTitle}</h3>
-            <button
-              type="button"
-              className="text-sm text-rose-700 underline disabled:opacity-50 disabled:pointer-events-none"
-              onClick={() => setDetailsOpen(open => !open)}
-              disabled={detailsDisabled}
-            >
-              {detailsOpen ? STR.lessDetails : STR.moreDetails}
-            </button>
           </div>
           {!canAccessDetails && (
             <p className="text-xs text-gray-500">Aktiviere mit Schmerz &gt; 0.</p>
           )}
-          {detailsOpen && !detailsDisabled && (
+          {!detailsDisabled && (
             <div className="space-y-4">
               <div>
                 <div className="mb-2 flex items-center gap-2">
