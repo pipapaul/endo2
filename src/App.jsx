@@ -160,6 +160,8 @@ const STR = {
   pbacClotSmall: 'Klumpen klein',
   pbacClotLarge: 'Klumpen groß',
   pbacLegend: 'Legende: Linie Schmerz, Balken PBAC, Punkt Beginn, Schraffur Periode, Linie Spotting.',
+  noBleeding: 'Kein Blut',
+  noEntry: 'Keine Angabe',
   calendarHint: 'Farbe = Schmerzintensität; Punkt = Beginn, Balken = Periode; Linie = Spotting.',
   spottingLabel: 'Spotting',
   moreDetails: 'Weitere Details',
