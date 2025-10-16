@@ -656,10 +656,8 @@ function detectCycles(entries, rules = PBAC_RULES) {
     }
 
     if (isMissing) {
-      finalize()
-      zeroStreak = rules.minZerosBeforeNewBleed
-      positiveRun = false
-      runZerosBefore = zeroStreak
+      prevDate = date
+      return
     } else if (pbac === 0) {
       zeroStreak += 1
       positiveRun = false
