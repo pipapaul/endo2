@@ -258,10 +258,6 @@ const SYMPTOMS = [
   { id: 'nausea', label: 'Übelkeit' },
   { id: 'bloat', label: 'Blähbauch' },
   { id: 'back', label: 'Rückenschmerz' },
-  { id: 'sex_deep', label: 'Schmerzen beim Sex' },
-  { id: 'urination', label: 'Schmerz beim Wasserlassen' },
-  { id: 'bowel', label: 'Schmerz beim Stuhlgang' },
-  { id: 'urge', label: 'Harndrang (stark/plötzlich)' },
   { id: 'migraine', label: 'Kopfschmerzen/Migräne' },
   { id: 'dizzy', label: 'Schwindel' },
 ]
@@ -279,7 +275,15 @@ const ZONES = [
   { id: 'thigh_r', label: 'Oberschenkel rechts' },
 ]
 
-const FILL_ALIASES = { low: 'light', mid: 'medium', high: 'heavy', light: 'light', medium: 'medium', heavy: 'heavy' }
+const FILL_ALIASES = {
+  none: 'none',
+  low: 'light',
+  mid: 'medium',
+  high: 'heavy',
+  light: 'light',
+  medium: 'medium',
+  heavy: 'heavy',
+}
 
 const FREQUENCY_OPTIONS = [
   { id: 'unknown', label: 'Unbekannt' },
@@ -356,6 +360,7 @@ function computePbacDayScore(pbac) {
     .forEach(p => {
       const kind = p.kind
       const fill = FILL_ALIASES[p.fill] ?? 'light'
+      if (fill === 'none') return
       const idx = levelIndex[fill] ?? 0
       const weights = PBAC_WEIGHTS[kind]
       if (weights) total += weights[idx] ?? 0
@@ -994,7 +999,11 @@ function PbacMini({ state, setState, disabled = false }) {
 
   const updateProduct = (kind, fill) => {
     setState(prev => {
+      const existing = (prev.products || []).find(p => p.kind === kind)
       const list = (prev.products || []).filter(p => p.kind !== kind)
+      if (existing?.fill === fill) {
+        return { ...prev, products: list, absent_reason: null }
+      }
       return { ...prev, products: [...list, { kind, fill }], absent_reason: null }
     })
   }
@@ -1071,8 +1080,9 @@ function PbacMini({ state, setState, disabled = false }) {
     )
 
   const ProdRow = ({ kind, label }) => {
-    const current = products.find(p => p.kind === kind)?.fill || 'light'
+    const current = products.find(p => p.kind === kind)?.fill ?? null
     const options = [
+      { id: 'none', label: STR.noBleeding },
       { id: 'light', label: 'leicht' },
       { id: 'medium', label: 'mittel' },
       { id: 'heavy', label: 'stark' },
