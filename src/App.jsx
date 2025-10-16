@@ -2159,7 +2159,18 @@ export default function EndoMiniApp() {
     try {
       const d = activeDate
       const pbacSave = normalizePbac(pbac)
-      const subNrsSave = normalizeSubNrs(subNrs)
+      const subNrsSave = (() => {
+        const normalized = normalizeSubNrs(subNrs)
+        return {
+          ...normalized,
+          dyspareunia: {
+            ...normalized.dyspareunia,
+            nrs: toNull(normalized.dyspareunia?.nrs),
+          },
+          dysuria: toNull(normalized.dysuria),
+          dyschezia: toNull(normalized.dyschezia),
+        }
+      })()
       const uroSave = normalizeUro(uro)
       const bowelSave = normalizeBowel(bowel)
       const therapySave = therapy.map(item => ({
@@ -2177,15 +2188,15 @@ export default function EndoMiniApp() {
         id: d,
         date: d,
         mode: settings.quickMode ? 'quick' : 'detail',
-        nrs,
-        nrs_absent_reason: nrsAbsent,
+        nrs: toNull(nrs),
+        nrs_absent_reason: nrs == null ? (nrsAbsent || ABSENT.UNKNOWN) : null,
         pbac: pbacSave,
         zones,
         symptoms,
         therapy: therapySave,
         tookMeds: typeof tookMeds === 'boolean' ? tookMeds : null,
-        sleep,
-        sleep_absent_reason: sleepAbsent,
+        sleep: toNull(sleep),
+        sleep_absent_reason: sleep == null ? (sleepAbsent || ABSENT.UNKNOWN) : null,
         subNrs: subNrsSave,
         uro: uroSave,
         bowel: bowelSave,
