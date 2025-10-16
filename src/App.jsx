@@ -792,12 +792,33 @@ function TopSlideBanner({ show, text, onClose }){
   )
 }
 
-function Range({ value, onChange, min=0, max=10, step=1, aria, labels, disabled=false }) {
+function Range({ value, onChange, min=0, max=10, step=1, aria, labels, disabled=false, onFirstActivate }) {
   const defaultLabels = ['0 kein','3 leicht','5 mittel','7 stark','10 unerträglich']
   const L = labels && labels.length===5 ? labels : defaultLabels
+  const isInactive = value == null
+  const defaultValue = Math.round((min + max) / 2)
+  const clampedDefault = Math.min(max, Math.max(min, defaultValue))
+  const uiValue = Number.isFinite(value) ? value : clampedDefault
   return (
     <div>
-      <input aria-label={aria} type="range" className="w-full" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))} disabled={disabled} />
+      <input
+        aria-label={aria}
+        type="range"
+        className={`w-full ${isInactive ? 'opacity-60' : ''}`}
+        min={min}
+        max={max}
+        step={step}
+        value={uiValue}
+        onChange={e => {
+          const n = Number(e.target.value)
+          if (isInactive && onFirstActivate) {
+            onFirstActivate()
+          }
+          onChange(n)
+        }}
+        disabled={disabled}
+      />
+      {isInactive && <div className="mt-1 text-xs text-gray-500">Nicht erfasst</div>}
       <div className="mt-2 flex justify-between text-xs text-gray-600">
         <span>{L[0]}</span><span>{L[1]}</span><span>{L[2]}</span><span>{L[3]}</span><span>{L[4]}</span>
       </div>
