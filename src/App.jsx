@@ -2053,13 +2053,27 @@ function LagScatter({ pairs = [] }) {
 }
 
 function CalendarHeatmap({ days }) {
-  // days: array of last 30 {date, nrs, period, periodStart}
+  // days: array of last 30 {date, nrs, period, periodStart, hasEntry}
   const cell = 20
   return (
     <div className="grid grid-cols-7 gap-1" aria-label="Kalender Heatmap">
       {days.map((d,i)=>{
         const value = isNum(d?.nrs) ? d.nrs : null
-        const c = value>=8?'bg-red-600':value>=5?'bg-red-400':value>=3?'bg-orange-300':value>0?'bg-yellow-200':'bg-gray-200'
+        const hasEntry = !!d?.hasEntry
+        const c =
+          value>=8
+            ? 'bg-red-600'
+            : value>=5
+              ? 'bg-red-400'
+              : value>=3
+                ? 'bg-orange-300'
+                : value>0
+                  ? 'bg-yellow-200'
+                  : value===0
+                    ? 'bg-gray-300'
+                    : hasEntry
+                      ? 'bg-gray-200'
+                      : 'bg-gray-100'
         return (
           <div
             key={i}
@@ -2670,6 +2684,7 @@ export default function EndoMiniApp() {
         period: periodSet.has(iso),
         periodStart: startSet.has(iso),
         spotting: spottingSet.has(iso),
+        hasEntry: !!e,
       })
     }
     return arr
