@@ -1,8 +1,8 @@
 {
   "name": "Endo – Tagescheck",
   "short_name": "EndoA",
-  "start_url": ".",
-  "scope": ".",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#fef2f2",
   "theme_color": "#f43f5e",
