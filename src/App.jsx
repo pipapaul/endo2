@@ -2093,7 +2093,7 @@ function CalendarHeatmap({ days }) {
 // ---------- Date Navigation ----------
 function DateNav({ activeDate, setActiveDate, hasEntry, onPrev, onNext, onToday, isEditing, onEdit }) {
   const navBgClasses = hasEntry
-    ? 'bg-emerald-50 border-emerald-100'
+    ? 'bg-yellow-50 border-yellow-100'
     : 'bg-rose-50 border-rose-100'
   return (
     <div className={`px-4 pt-2 pb-1 border-b ${navBgClasses} transition-colors`}>
