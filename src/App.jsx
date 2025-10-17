@@ -2092,8 +2092,11 @@ function CalendarHeatmap({ days }) {
 
 // ---------- Date Navigation ----------
 function DateNav({ activeDate, setActiveDate, hasEntry, onPrev, onNext, onToday, isEditing, onEdit }) {
+  const navBgClasses = hasEntry
+    ? 'bg-emerald-50 border-emerald-100'
+    : 'bg-rose-50 border-rose-100'
   return (
-    <div className="px-4 pt-2 pb-1 bg-rose-50 border-b border-rose-100">
+    <div className={`px-4 pt-2 pb-1 border-b ${navBgClasses} transition-colors`}>
       <div className="flex items-center justify-between">
         <button aria-label="Vorheriger Tag" className="w-9 h-9 rounded-full bg-rose-100 text-rose-700 focus-visible:ring-2 focus-visible:ring-rose-400" onClick={onPrev}>‹</button>
         <div className="text-center">
@@ -2795,10 +2798,15 @@ export default function EndoMiniApp() {
     }, 0)
   }
 
+  const dayBackgroundClass = hasEntryToday ? 'bg-emerald-50' : 'bg-rose-50'
+  const headerBackgroundClass = hasEntryToday
+    ? 'bg-emerald-50/80 border-emerald-100'
+    : 'bg-rose-50/80 border-rose-100'
+
   return (
     <ErrorBoundary>
-      <main className="min-h-screen bg-rose-50 text-gray-900 pb-24 print:hidden">
-      <header className="sticky top-0 z-30 bg-rose-50/80 backdrop-blur border-b border-rose-100">
+      <main className={`min-h-screen ${dayBackgroundClass} text-gray-900 pb-24 print:hidden transition-colors`}>
+      <header className={`sticky top-0 z-30 border-b ${headerBackgroundClass} backdrop-blur transition-colors`}>
         <div className="p-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-rose-900">{STR.appTitle}</h1>
           <details className="relative">
