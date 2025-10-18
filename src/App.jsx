@@ -2798,10 +2798,10 @@ export default function EndoMiniApp() {
     }, 0)
   }
 
-  const dayBackgroundClass = hasEntryToday ? 'bg-emerald-50' : 'bg-rose-50'
+  const dayBackgroundClass = hasEntryToday ? 'bg-emerald-50' : 'bg-indigo-50'
   const headerBackgroundClass = hasEntryToday
     ? 'bg-emerald-50/80 border-emerald-100'
-    : 'bg-rose-50/80 border-rose-100'
+    : 'bg-indigo-50/80 border-indigo-100'
 
   return (
     <ErrorBoundary>
