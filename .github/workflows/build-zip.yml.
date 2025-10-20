@@ -1,0 +1,75 @@
+name: Build ZIP (manual download)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build-zip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node (with npm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Nutzt npm ci, falls ein package-lock.json existiert – sonst npm install.
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --fund=false
+          else
+            npm install --no-audit --fund=false
+          fi
+
+      - name: Build (Vite)
+        run: npm run build
+
+      - name: SPA fallback (404 -> index)
+        run: cp dist/index.html dist/404.html || true
+
+      # Bricht ab, wenn dist leer ist (damit keine leere ZIP entsteht)
+      - name: Verify build output
+        run: |
+          set -euo pipefail
+          test -d dist
+          test -f dist/index.html
+          COUNT="$(find dist -type f | wc -l)"
+          echo "Files inside dist: $COUNT"
+          [ "$COUNT" -gt 0 ]
+
+      # Artifact-Namen vorbereiten (Branch + Short SHA + Zeitstempel)
+      - name: Prepare artifact name
+        id: meta
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TS="$(date -u +%Y%m%d-%H%M%SZ)"
+          REPO="${GITHUB_REPOSITORY#*/}"
+          FILE="site-dist-${REPO}-${REF_NAME}-${SHORT_SHA}-${TS}.zip"
+          echo "ARTIFACT_FILE=$FILE" >> "$GITHUB_ENV"
+          echo "ARTIFACT_NAME=${FILE%.zip}" >> "$GITHUB_ENV"
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "name=${FILE%.zip}" >> "$GITHUB_OUTPUT"
+
+      # ZIP enthält *nur* den Inhalt von dist/ (kein zusätzlicher dist-Ordner im ZIP)
+      - name: Create ZIP from dist/
+        run: |
+          cd dist
+          zip -r "../${ARTIFACT_FILE}" .
+          cd -
+          ls -lh "${ARTIFACT_FILE}"
+
+      - name: Upload ZIP as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ARTIFACT_FILE }}
+          retention-days: 14
