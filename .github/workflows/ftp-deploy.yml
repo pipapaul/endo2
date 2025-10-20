@@ -1,4 +1,4 @@
-name: Deploy via FTP (manual, robust FTPS)
+name: Deploy via FTP (manual, robust FTPS + debug)
 
 on:
   workflow_dispatch: {}
@@ -10,19 +10,19 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node (no cache -> no lockfile needed)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install            # kein npm ci -> keine Lockfile nötig
+        run: npm install
 
       - name: Build (Vite)
         run: npm run build
@@ -30,7 +30,7 @@ jobs:
       - name: SPA fallback (404 -> index)
         run: cp dist/index.html dist/404.html || true
 
-      # ---- Verify build output: brich ab, wenn dist leer oder index.html fehlt ----
+      # --- Fail früh, wenn der Build leer ist ---
       - name: Verify build output (fail if empty)
         run: |
           set -euo pipefail
@@ -45,20 +45,46 @@ jobs:
           echo "Vorschau (bis zu 50 Dateien):"
           find dist -maxdepth 2 -type f | head -n 50
 
-      # ===================== VARIANTE A: EXPLIZITES FTPS (empfohlen) =====================
-      - name: Deploy via FTPS (explicit, port 21)
+      # --- Remote-Diagnose: Kannst du schreiben/lesen, und bist du im erwarteten Root? ---
+      - name: Install lftp (for FTPS smoke test)
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Remote smoke test (explicit FTPS on 21)
+        env:
+          FTP_HOST:     ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT:     ${{ secrets.FTP_PORT }}
+        run: |
+          set -euo pipefail
+          echo "probe $(date -u +%FT%TZ)" > __ftp_probe.txt
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_HOST" -p "${FTP_PORT:-21}" -e "
+            set ssl:verify-certificate false;
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ftp:passive-mode true;
+            pwd; ls -la;
+            put -O ./ __ftp_probe.txt;
+            ls -la;
+            rm -f __ftp_probe.txt;
+            bye
+          "
+
+      # --- Einmaliger Full-Upload, falls der Sync-State klemmt ---
+      - name: Deploy via FTPS (explicit, root, force re-sync)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server:     ${{ secrets.FTP_HOST }}
           username:   ${{ secrets.FTP_USERNAME }}
           password:   ${{ secrets.FTP_PASSWORD }}
-          protocol:   ftps
+          protocol:   ftps                  # explizites FTPS
           # port:     ${{ secrets.FTP_PORT || 21 }}   # optional; Standard ist 21
-          local-dir:  dist/                          # MUSS mit / enden
-          server-dir: ./                             # Root, MUSS mit / enden
-          security:   loose                          # bei sauberen Certs -> 'strict'
+          local-dir:  dist/                 # Uploadquelle
+          server-dir: ./                    # Root des Accounts
+          security:   loose                 # bei gültigem Cert -> 'strict'
           timeout:    60000
           log-level:  verbose
+          dangerous-clean-slate: true       # ERZWINGT Vollabgleich (Sync-State ignorieren)
           exclude: |
             **/.git*
             **/.github/**
@@ -68,26 +94,43 @@ jobs:
             **/yarn.lock
             **/pnpm-lock.yaml
 
-      # ===================== VARIANTE B: IMPLIZITES FTPS (Port 990) =====================
-      # Falls dein Hoster implizites FTPS nutzt, Variante A auskommentieren und diese nutzen.
-      # - name: Deploy via FTPS (implicit, port 990)
-      #   uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-      #   with:
-      #     server:     ${{ secrets.FTP_HOST }}
-      #     username:   ${{ secrets.FTP_USERNAME }}
-      #     password:   ${{ secrets.FTP_PASSWORD }}
-      #     protocol:   ftps-legacy
-      #     # port:     ${{ secrets.FTP_PORT || 990 }}  # optional; Standard ist 990
-      #     local-dir:  dist/                          # MUSS mit / enden
-      #     server-dir: ./                             # Root
-      #     security:   loose
-      #     timeout:    60000
-      #     log-level:  verbose
-      #     exclude: |
-      #       **/.git*
-      #       **/.github/**
-      #       node_modules/**
-      #       **/README.md
-      #       **/package*.json
-      #       **/yarn.lock
-      #       **/pnpm-lock.yaml
+      # --- Nach dem Deploy: Remote-Inhalt listen ---
+      - name: Remote list after deploy
+        if: always()
+        env:
+          FTP_HOST:     ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT:     ${{ secrets.FTP_PORT }}
+        run: |
+          set -euo pipefail
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_HOST" -p "${FTP_PORT:-21}" -e "
+            set ssl:verify-certificate false;
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ftp:passive-mode true;
+            pwd; ls -la; bye
+          "
+
+      # --- Optional: Implizites FTPS (Port 990) statt explizit ---
+      # - name: Remote smoke test (implicit FTPS on 990)
+      #   if: false
+      #   env:
+      #     FTP_HOST:     ${{ secrets.FTP_HOST }}
+      #     FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      #     FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      #   run: |
+      #     set -euo pipefail
+      #     echo "probe $(date -u +%FT%TZ)" > __ftp_probe.txt
+      #     lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_HOST" -p 990 -e "
+      #       set ssl:verify-certificate false;
+      #       set ftp:ssl-force true;
+      #       set ftp:ssl-protect-data true;
+      #       set ftp:passive-mode true;
+      #       set ftp:ssl-use-implicit true;
+      #       pwd; ls -la;
+      #       put -O ./ __ftp_probe.txt;
+      #       ls -la;
+      #       rm -f __ftp_probe.txt;
+      #       bye
+      #     "
