@@ -12,16 +12,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node (with npm cache)
+      # Lockfile-Detection: setzt outputs.has_lock (true/false) und outputs.cache_tool (npm|yarn|none)
+      - name: Detect lockfile
+        id: detect_lock
+        run: |
+          set -euo pipefail
+          if [ -f yarn.lock ]; then
+            echo "has_lock=true" >> "$GITHUB_OUTPUT"
+            echo "cache_tool=yarn" >> "$GITHUB_OUTPUT"
+          elif [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            echo "has_lock=true" >> "$GITHUB_OUTPUT"
+            echo "cache_tool=npm" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_lock=false" >> "$GITHUB_OUTPUT"
+            echo "cache_tool=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Setup Node MIT Cache – nur wenn ein Lockfile existiert
+      - name: Setup Node (with cache)
+        if: steps.detect_lock.outputs.cache_tool != 'none'
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: ${{ steps.detect_lock.outputs.cache_tool }}
 
-      # Nutzt npm ci, falls ein package-lock.json existiert – sonst npm install.
+      # Setup Node OHNE Cache – wenn kein Lockfile existiert
+      - name: Setup Node (no cache)
+        if: steps.detect_lock.outputs.cache_tool == 'none'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Install je nach Lockfile/Tool
       - name: Install dependencies
         run: |
-          if [ -f package-lock.json ]; then
+          set -euo pipefail
+          if [ -f yarn.lock ]; then
+            corepack enable
+            yarn install --frozen-lockfile
+          elif [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
             npm ci --no-audit --fund=false
           else
             npm install --no-audit --fund=false
@@ -33,7 +62,7 @@ jobs:
       - name: SPA fallback (404 -> index)
         run: cp dist/index.html dist/404.html || true
 
-      # Bricht ab, wenn dist leer ist (damit keine leere ZIP entsteht)
+      # Brich ab, wenn dist leer ist (sonst leeres ZIP)
       - name: Verify build output
         run: |
           set -euo pipefail
@@ -43,7 +72,7 @@ jobs:
           echo "Files inside dist: $COUNT"
           [ "$COUNT" -gt 0 ]
 
-      # Artifact-Namen vorbereiten (Branch + Short SHA + Zeitstempel)
+      # Sinnvollen Artefakt-Namen bauen
       - name: Prepare artifact name
         id: meta
         env:
@@ -59,7 +88,7 @@ jobs:
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
           echo "name=${FILE%.zip}" >> "$GITHUB_OUTPUT"
 
-      # ZIP enthält *nur* den Inhalt von dist/ (kein zusätzlicher dist-Ordner im ZIP)
+      # ZIP mit dem *Inhalt* von dist/ (kein dist-Ordner im ZIP)
       - name: Create ZIP from dist/
         run: |
           cd dist
