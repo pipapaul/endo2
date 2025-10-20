@@ -10,6 +10,8 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,6 +30,21 @@ jobs:
       - name: SPA fallback (404 -> index)
         run: cp dist/index.html dist/404.html || true
 
+      # ---- Verify build output: brich ab, wenn dist leer oder index.html fehlt ----
+      - name: Verify build output (fail if empty)
+        run: |
+          set -euo pipefail
+          test -d dist
+          test -f dist/index.html
+          COUNT="$(find dist -type f | wc -l)"
+          echo "Files inside dist: $COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "dist ist leer – Deployment wird abgebrochen."
+            exit 1
+          fi
+          echo "Vorschau (bis zu 50 Dateien):"
+          find dist -maxdepth 2 -type f | head -n 50
+
       # ===================== VARIANTE A: EXPLIZITES FTPS (empfohlen) =====================
       - name: Deploy via FTPS (explicit, port 21)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
@@ -35,13 +52,13 @@ jobs:
           server:     ${{ secrets.FTP_HOST }}
           username:   ${{ secrets.FTP_USERNAME }}
           password:   ${{ secrets.FTP_PASSWORD }}
-          protocol:   ftps            # explizites FTPS über Port 21
-          port:       ${{ secrets.FTP_PORT || 21 }}
-          local-dir:  dist/           # MUSS mit / enden
-          # server-dir: ./            # (Root; Standard ist ./; bei Bedarf explizit setzen)
-          security:   loose           # lockert TLS-Zert-Checks; bei sauberen Certs auf 'strict' stellen
-          timeout:    60000           # robustere Zeitouts für trägere Hoster
-          log-level:  verbose         # mehr Log für Diagnose
+          protocol:   ftps
+          # port:     ${{ secrets.FTP_PORT || 21 }}   # optional; Standard ist 21
+          local-dir:  dist/                          # MUSS mit / enden
+          server-dir: ./                             # Root, MUSS mit / enden
+          security:   loose                          # bei sauberen Certs -> 'strict'
+          timeout:    60000
+          log-level:  verbose
           exclude: |
             **/.git*
             **/.github/**
@@ -52,18 +69,17 @@ jobs:
             **/pnpm-lock.yaml
 
       # ===================== VARIANTE B: IMPLIZITES FTPS (Port 990) =====================
-      # Falls dein Hoster FTPS *implizit* nutzt (klassisch Port 990), nimm diese Variante
-      # und kommentiere Variante A aus.
+      # Falls dein Hoster implizites FTPS nutzt, Variante A auskommentieren und diese nutzen.
       # - name: Deploy via FTPS (implicit, port 990)
       #   uses: SamKirkland/FTP-Deploy-Action@v4.3.6
       #   with:
       #     server:     ${{ secrets.FTP_HOST }}
       #     username:   ${{ secrets.FTP_USERNAME }}
       #     password:   ${{ secrets.FTP_PASSWORD }}
-      #     protocol:   ftps-legacy    # implizites FTPS (siehe Doku)
-      #     port:       ${{ secrets.FTP_PORT || 990 }}
-      #     local-dir:  dist/
-      #     # server-dir: ./
+      #     protocol:   ftps-legacy
+      #     # port:     ${{ secrets.FTP_PORT || 990 }}  # optional; Standard ist 990
+      #     local-dir:  dist/                          # MUSS mit / enden
+      #     server-dir: ./                             # Root
       #     security:   loose
       #     timeout:    60000
       #     log-level:  verbose
